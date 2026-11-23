@@ -1,0 +1,102 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout>
+  <nav id="nav" hidden class="fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-2.5 bg-white/85 backdrop-blur border-b border-emerald-100">
+    <span class="text-xl font-bold text-emerald-700">Posty</span>
+    <button data-act="profile" aria-label="Edit profile" class="rounded-full"><img id="navPic" alt="" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-200" /></button>
+  </nav>
+
+  <main id="feed" hidden aria-label="Poster feed"></main>
+
+  <div id="install" hidden class="fixed left-4 right-4 bottom-4 z-[250] bg-white rounded-2xl shadow-xl border border-emerald-100 p-3 flex items-center gap-3">
+    <img src="/favicon.svg" alt="" class="w-10 h-10" />
+    <p class="flex-1 text-sm font-semibold">Install Posty for faster access</p>
+    <button data-act="install" class="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold">Install</button>
+    <button data-act="closeInstall" aria-label="Close" class="text-emerald-400 px-1"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <!-- Editor -->
+  <section id="editor" hidden aria-label="Poster editor">
+    <button data-act="closeEditor" aria-label="Close editor" class="fixed top-3 left-3 z-10 w-10 h-10 rounded-full bg-white text-emerald-600 shadow-lg"><i class="fa-solid fa-xmark"></i></button>
+    <div id="stage"><div id="capture" class="capture">
+      <img id="edImg" class="w-full block" alt="Poster" crossorigin="anonymous" />
+      <img id="edLogo" class="logo" alt="" crossorigin="anonymous" />
+      <span class="wm" id="edWm"></span>
+      <div id="edOv"></div>
+    </div></div>
+    <div class="dock">
+      <div id="p-font" class="panel" hidden><div class="flex flex-wrap gap-2" id="fontChips"></div></div>
+      <div id="p-align" class="panel" hidden><div class="flex gap-2">
+        <button class="chip flex-1" data-act="theme" data-v="left"><i class="fa-solid fa-align-left"></i> Left</button>
+        <button class="chip flex-1" data-act="theme" data-v="center"><i class="fa-solid fa-align-center"></i> Center</button>
+        <button class="chip flex-1" data-act="theme" data-v="right"><i class="fa-solid fa-align-right"></i> Right</button></div></div>
+      <div id="p-adjust" class="panel" hidden>
+        <label class="flex justify-between text-xs font-bold text-emerald-700">Photo size <span id="sizeVal">80px</span></label>
+        <input id="size" type="range" min="40" max="120" value="80" aria-label="Photo size" />
+        <label class="flex justify-between text-xs font-bold text-emerald-700 mt-3">Card darkness <span id="opVal">80%</span></label>
+        <input id="opacity" type="range" min="0" max="100" value="80" aria-label="Card darkness" /></div>
+      <div class="tools">
+        <button class="tool" data-act="panel" data-v="font"><i class="fa-solid fa-font"></i>Font</button>
+        <button class="tool" data-act="panel" data-v="align"><i class="fa-solid fa-arrows-left-right"></i>Align</button>
+        <button class="tool" data-act="panel" data-v="adjust"><i class="fa-solid fa-sliders"></i>Adjust</button>
+        <button class="tool" data-act="shape"><i class="fa-solid fa-shapes"></i>Shape</button>
+        <button class="tool" data-act="filter"><i class="fa-solid fa-wand-magic-sparkles"></i>Filter</button>
+        <button class="tool" data-act="banner"><i class="fa-solid fa-image"></i>Banner</button>
+        <button class="tool" data-act="socials"><i class="fa-solid fa-users"></i>Socials</button>
+        <button class="tool" data-act="share"><i class="fa-solid fa-share-nodes"></i>Share</button>
+        <button class="tool" data-act="exportOpen" style="color:#fff;background:#10b981"><i class="fa-solid fa-download"></i>Save</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Profile setup -->
+  <div id="setup" class="modal" hidden><div class="sheetbox space-y-2.5">
+    <h2 class="text-lg font-bold text-emerald-700 text-center">Your poster profile</h2>
+    <div class="flex justify-center"><div class="relative">
+      <button data-act="pickPic" aria-label="Change photo"><img id="setupPic" alt="" class="w-20 h-20 rounded-full object-cover border-4 border-emerald-100" /></button>
+      <button data-act="cropPic" aria-label="Adjust photo" class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow border border-emerald-100 text-emerald-600 text-xs"><i class="fa-solid fa-crop"></i></button></div></div>
+    <input id="fName" class="field" placeholder="Your name" autocomplete="name" />
+    <div class="grid grid-cols-2 gap-2"><input id="fExtra" class="field" placeholder="Profession" /><input id="fContact" class="field" type="tel" placeholder="Mobile no." /></div>
+    <label class="flex items-center justify-between text-sm font-bold text-emerald-700 pt-1">Show “Follow me”<input id="fVis" type="checkbox" class="w-5 h-5 accent-emerald-500" checked /></label>
+    <input id="fInsta" class="field" placeholder="Instagram @handle" /><input id="fTwitter" class="field" placeholder="Twitter @handle" /><input id="fFb" class="field" placeholder="Facebook name" />
+    <button class="btn" data-act="saveSetup">Start designing</button>
+    <button class="btn alt" data-act="closeSetup" id="setupCancel" hidden>Cancel</button>
+  </div></div>
+
+  <!-- Socials editor -->
+  <div id="socEdit" class="modal" hidden><div class="sheetbox space-y-2.5">
+    <div class="flex items-center justify-between"><h3 class="font-bold text-emerald-700">Socials</h3>
+      <button class="chip" id="socAll" data-act="socToggle" data-v="all" aria-pressed="true">Show section</button></div>
+    <div class="flex gap-2"><input id="eInsta" class="field" placeholder="@insta" /><button class="chip" id="tInsta" data-act="socToggle" data-v="insta" aria-label="Toggle Instagram"><i class="fa-brands fa-instagram"></i></button></div>
+    <div class="flex gap-2"><input id="eTwitter" class="field" placeholder="@twitter" /><button class="chip" id="tTwitter" data-act="socToggle" data-v="twitter" aria-label="Toggle Twitter"><i class="fa-brands fa-twitter"></i></button></div>
+    <div class="flex gap-2"><input id="eFb" class="field" placeholder="Facebook" /><button class="chip" id="tFb" data-act="socToggle" data-v="fb" aria-label="Toggle Facebook"><i class="fa-brands fa-facebook-f"></i></button></div>
+    <div class="flex gap-2"><button class="btn alt" data-act="closeSoc">Cancel</button><button class="btn" data-act="saveSoc">Save</button></div>
+  </div></div>
+
+  <!-- Text edit -->
+  <div id="txtEdit" class="modal" hidden><div class="sheetbox space-y-3">
+    <input id="txtIn" class="field" />
+    <div class="flex gap-2"><button class="btn alt" data-act="closeTxt">Cancel</button><button class="btn" data-act="saveTxt">Update</button></div>
+  </div></div>
+
+  <!-- Export -->
+  <div id="export" class="modal" hidden><div class="sheetbox space-y-3 text-center">
+    <h3 class="text-lg font-bold text-emerald-700">Save poster</h3>
+    <button class="btn alt" data-act="download" data-v="2">Standard (SD)</button>
+    <button class="btn" data-act="download" data-v="4">Ultra HD (4K)</button>
+    <button class="text-sm text-emerald-500 pt-1" data-act="closeExport">Cancel</button>
+  </div></div>
+
+  <!-- Cropper -->
+  <div id="crop" class="modal" hidden style="z-index:400"><div class="sheetbox flex flex-col" style="height:70dvh">
+    <h3 class="text-center font-bold text-emerald-700 mb-2">Adjust photo</h3>
+    <div class="flex-1 min-h-0 bg-emerald-50 rounded-xl overflow-hidden"><img id="cropImg" alt="" class="block max-w-full" crossorigin="anonymous" /></div>
+    <div class="flex gap-2 mt-3"><button class="btn alt" data-act="cropSkip">Skip</button><button class="btn" data-act="cropSave">Save</button></div>
+  </div></div>
+
+  <input id="file" type="file" accept="image/*" hidden />
+  <div id="toast" hidden role="status" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-[500] bg-emerald-900 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg"></div>
+
+  <script>import '../scripts/app.js';</script>
+</Layout>
