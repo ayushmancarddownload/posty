@@ -141,7 +141,9 @@ function updateAppImage(src) {
   localStorage.setItem('aestheticUser', JSON.stringify(user));
 }
 
-function initManualCrop() { openCropper(user.pic); }
+function initManualCrop() {
+  openCropper(user.pic);
+}
 
 function openCropper(imageSrc) {
   const modal = document.getElementById('cropperModal');
@@ -151,10 +153,20 @@ function openCropper(imageSrc) {
     modal.classList.remove('hidden');
     if (cropper) cropper.destroy();
     cropper = new window.Cropper(image, {
-      aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.8,
-      restore: false, guides: false, center: true, highlight: false,
-      cropBoxMovable: false, cropBoxResizable: false, toggleDragModeOnDblclick: false,
-      ready() { if (this.cropper) this.cropper.reset(); }
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.8,
+      restore: false,
+      guides: false,
+      center: true,
+      highlight: false,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+      ready() {
+        if (this.cropper) this.cropper.reset();
+      }
     });
   }
 }
@@ -163,7 +175,10 @@ function cancelCrop() {
   const image = document.getElementById('imageToCrop');
   if (image && image.src) updateAppImage(image.src);
   document.getElementById('cropperModal')?.classList.add('hidden');
-  if (cropper) { cropper.destroy(); cropper = null; }
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
 }
 
 function performCrop() {
@@ -215,9 +230,12 @@ function loadFeed() {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
 
-  let images = MY_GALLERY_IMAGES.length > 0
-    ? [...MY_GALLERY_IMAGES]
-    : Array.from({ length: 24 }, (_, i) => `https://picsum.photos/id/${i + 60}/600/800`);
+  const autoPosters = JSON.parse(gallery.dataset.posters || '[]');
+  let images = autoPosters.length > 0
+    ? [...autoPosters]
+    : (MY_GALLERY_IMAGES.length > 0
+      ? [...MY_GALLERY_IMAGES]
+      : Array.from({ length: 24 }, (_, i) => `https://picsum.photos/id/${i + 60}/600/800`));
 
   images = images.sort(() => Math.random() - 0.5);
   gallery.innerHTML = '';
@@ -244,9 +262,15 @@ function getPosterHTML(url, theme, bg, fontClass, index) {
     const anyVisible = user.socials.insta.visible || user.socials.twitter.visible || user.socials.fb.visible;
     if (anyVisible) {
       socialsHTML += `<p class="text-[8px] font-bold opacity-80 uppercase tracking-widest mb-0.5 flex items-center gap-1">Follow Me <i class="fas fa-pen text-[8px] opacity-50 capture-hide"></i></p><div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
-      if (user.socials.insta.visible) socialsHTML += `<div class="info-row"><i class="fab fa-instagram fw-icon ${!user.socials.insta.val ? 'opacity-60' : ''}"></i> ${user.socials.insta.val ? `<span>${user.socials.insta.val}</span>` : ''}</div>`;
-      if (user.socials.twitter.visible) socialsHTML += `<div class="info-row"><i class="fab fa-twitter fw-icon ${!user.socials.twitter.val ? 'opacity-60' : ''}"></i> ${user.socials.twitter.val ? `<span>${user.socials.twitter.val}</span>` : ''}</div>`;
-      if (user.socials.fb.visible) socialsHTML += `<div class="info-row"><i class="fab fa-facebook-f fw-icon ${!user.socials.fb.val ? 'opacity-60' : ''}"></i> ${user.socials.fb.val ? `<span>${user.socials.fb.val}</span>` : ''}</div>`;
+      if (user.socials.insta.visible) {
+        socialsHTML += `<div class="info-row"><i class="fab fa-instagram fw-icon ${!user.socials.insta.val ? 'opacity-60' : ''}"></i> ${user.socials.insta.val ? `<span>${user.socials.insta.val}</span>` : ''}</div>`;
+      }
+      if (user.socials.twitter.visible) {
+        socialsHTML += `<div class="info-row"><i class="fab fa-twitter fw-icon ${!user.socials.twitter.val ? 'opacity-60' : ''}"></i> ${user.socials.twitter.val ? `<span>${user.socials.twitter.val}</span>` : ''}</div>`;
+      }
+      if (user.socials.fb.visible) {
+        socialsHTML += `<div class="info-row"><i class="fab fa-facebook-f fw-icon ${!user.socials.fb.val ? 'opacity-60' : ''}"></i> ${user.socials.fb.val ? `<span>${user.socials.fb.val}</span>` : ''}</div>`;
+      }
       socialsHTML += `</div>`;
     }
   }
@@ -296,10 +320,17 @@ async function downloadFeedItem(containerId, btn) {
   btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
   try {
     const canvas = await window.html2canvas(captureTarget, {
-      scale: 3, useCORS: true, allowTaint: false, backgroundColor: null,
+      scale: 3,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
       onclone: (clonedDoc) => {
         const el = clonedDoc.getElementById(containerId);
-        if (el) { el.style.borderRadius = '0'; el.style.border = 'none'; el.style.boxShadow = 'none'; }
+        if (el) {
+          el.style.borderRadius = '0';
+          el.style.border = 'none';
+          el.style.boxShadow = 'none';
+        }
       }
     });
     const link = document.createElement('a');
@@ -319,8 +350,11 @@ async function shareFeedItem(containerId) {
     const canvas = await window.html2canvas(captureTarget, { scale: 2, useCORS: true });
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'poster.png', { type: 'image/png' });
-      if (navigator.share) await navigator.share({ files: [file], title: 'Check out this design!' });
-      else alert("Sharing not supported on this browser.");
+      if (navigator.share) {
+        await navigator.share({ files: [file], title: 'Check out this design!' });
+      } else {
+        alert("Sharing not supported on this browser.");
+      }
     });
   } catch (err) {}
 }
@@ -461,7 +495,9 @@ function togglePanel(id) {
   if (panel && panel.classList.contains('hidden')) {
     panels.forEach(p => document.getElementById(p)?.classList.add('hidden'));
     panel.classList.remove('hidden');
-  } else panel?.classList.add('hidden');
+  } else {
+    panel?.classList.add('hidden');
+  }
 }
 
 function selectFont(fontClass) {
@@ -519,7 +555,9 @@ async function sharePoster() {
   const captureArea = document.getElementById('captureArea');
   try {
     const canvas = await window.html2canvas(captureArea, {
-      scale: 2, useCORS: true, backgroundColor: null,
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
       onclone: (clonedDoc) => clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none')
     });
     canvas.toBlob(async (blob) => {
@@ -538,11 +576,18 @@ async function downloadPoster(scale, btn) {
 
   try {
     const canvas = await window.html2canvas(document.getElementById('captureArea'), {
-      scale, useCORS: true, allowTaint: false, backgroundColor: null,
+      scale,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
       onclone: (clonedDoc) => {
         clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
         const captureDiv = clonedDoc.getElementById('captureArea');
-        if (captureDiv) { captureDiv.style.border = 'none'; captureDiv.style.boxShadow = 'none'; captureDiv.style.borderRadius = '0'; }
+        if (captureDiv) {
+          captureDiv.style.border = 'none';
+          captureDiv.style.boxShadow = 'none';
+          captureDiv.style.borderRadius = '0';
+        }
       }
     });
     const link = document.createElement('a');
@@ -559,7 +604,11 @@ async function downloadPoster(scale, btn) {
     }, 1000);
   } catch (err) {
     btn.innerHTML = '<i class="fas fa-times"></i> Error';
-    setTimeout(() => { btn.innerHTML = originalText; btn.className = originalClass; btn.disabled = false; }, 2000);
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.className = originalClass;
+      btn.disabled = false;
+    }, 2000);
   }
 }
 
@@ -577,7 +626,9 @@ function saveProfileText() {
   if (activeEditId === 'modalProfileName') adjustNameSize();
 }
 
-function showDownloadOptions() { togglePanel('qualityPopup'); }
+function showDownloadOptions() {
+  togglePanel('qualityPopup');
+}
 
 function toggleEditProfilePopup() {
   const modal = document.getElementById('userDetailsModal');
@@ -596,7 +647,6 @@ function toggleEditProfilePopup() {
   }
 }
 
-// Global window binding for inline onclick attributes
 Object.assign(window, {
   initManualCrop, saveUserSetup, toggleEditProfilePopup, closeModal, togglePanel,
   selectFont, setTheme, updateProfileSize, updateCardOpacity, editProfileText,
