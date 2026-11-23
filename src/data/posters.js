@@ -3,7 +3,7 @@ export const FEED_OPACITY_BOTTOM = 0.5;
 export const FEED_OPACITY_TOP = 0;
 
 export const MY_GALLERY_IMAGES = [
-  "https://guglaa.com/img/20250130_120410-1024x1024.jpg",
-  "https://guglaa.com/img/20250130_120829-1024x1024.jpg",
+  "/posters/img1.jpeg",
+  "/posters/img2.jpeg",
   // Yahan aur poster links add karein
 ];
