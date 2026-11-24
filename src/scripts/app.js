@@ -1,5 +1,16 @@
 import { SITE_LOGO_URL, FEED_OPACITY_BOTTOM, FEED_OPACITY_TOP, MY_GALLERY_IMAGES } from '../data/posters.js';
 
+// === 1. APNA SUPABASE URL & ANON KEY YAHAN PASTE KAREIN ===
+const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
+const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+
+let sb = null;
+let currentAuthUser = null;
+let userSubscription = { plan: 'free', proUntil: 0 };
+let selectedPlanId = '90days';
+let hideWatermark = false;
+
 let cropper;
 let deferredPrompt;
 let activeEditId = null;
@@ -39,8 +50,35 @@ const profileShapes = ['rounded-full', 'rounded-none', 'rounded-2xl'];
 const filters = ['', 'grayscale(100%)', 'sepia(80%)', 'contrast(150%)', 'hue-rotate(45deg)'];
 const fonts = ['font-poppins', 'font-playfair', 'font-meow-script', 'font-pacifico', 'font-quicksand'];
 
+// Supabase Initialize
+if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")) {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    currentAuthUser = session?.user || null;
+    updateAuthUI();
+
+    if (currentAuthUser) {
+      await fetchUserSubscription(currentAuthUser.id);
+      if (!localStorage.getItem('aestheticUser')) {
+        const meta = currentAuthUser.user_metadata || {};
+        if (meta.full_name) {
+          user.name = meta.full_name;
+          const nameInput = document.getElementById('userNameInput');
+          if (nameInput && !nameInput.value) nameInput.value = meta.full_name;
+        }
+        if (meta.avatar_url) updateAppImage(meta.avatar_url);
+      }
+    } else {
+      userSubscription = { plan: 'free', proUntil: 0 };
+      updateProUI();
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   setupPWA();
+  checkInstamojoReturn();
 
   const saved = localStorage.getItem('aestheticUser');
   if (saved) {
@@ -72,15 +110,222 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFeed();
 });
 
+// === AUTH & SUBSCRIPTION ===
+async function fetchUserSubscription(userId) {
+  if (!sb || !userId) return;
+  const { data } = await sb
+    .from('subscriptions')
+    .select('plan, pro_until')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (data) {
+    userSubscription = { plan: data.plan || 'free', proUntil: Number(data.pro_until || 0) };
+  } else {
+    userSubscription = { plan: 'free', proUntil: 0 };
+  }
+  updateProUI();
+}
+
+function isProUser() {
+  return Boolean(currentAuthUser && userSubscription.proUntil > Date.now());
+}
+
+function requirePro(callback) {
+  if (isProUser()) {
+    callback();
+  } else {
+    openPricingModal();
+  }
+}
+
+async function loginWithGoogle() {
+  if (!sb) {
+    alert("Pehle app.js me apna SUPABASE_URL aur SUPABASE_ANON_KEY daalein!");
+    return;
+  }
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}${baseUrl}` }
+  });
+  if (error) alert("Google Login error: " + error.message);
+}
+
+async function logoutGoogle() {
+  if (sb) {
+    await sb.auth.signOut();
+    currentAuthUser = null;
+    userSubscription = { plan: 'free', proUntil: 0 };
+    updateAuthUI();
+    updateProUI();
+  }
+}
+
+function updateAuthUI() {
+  const loggedOut = document.getElementById('loggedOutView');
+  const loggedIn = document.getElementById('loggedInView');
+  const setupBtn = document.getElementById('setupGoogleBtn');
+
+  if (currentAuthUser) {
+    const meta = currentAuthUser.user_metadata || {};
+    loggedOut?.classList.add('hidden');
+    loggedIn?.classList.remove('hidden');
+    const avatar = document.getElementById('authUserAvatar');
+    const email = document.getElementById('authUserEmail');
+    if (avatar) avatar.src = meta.avatar_url || user.pic;
+    if (email) email.innerText = currentAuthUser.email || meta.full_name || "Google User";
+    if (setupBtn) setupBtn.innerHTML = `<i class="fas fa-check-circle text-emerald-500"></i> Logged in as ${meta.full_name || currentAuthUser.email}`;
+  } else {
+    loggedOut?.classList.remove('hidden');
+    loggedIn?.classList.add('hidden');
+  }
+}
+
+function updateProUI() {
+  const proActive = isProUser();
+  const badge = document.getElementById('navProBadge');
+  const badgeText = document.getElementById('navProText');
+  const planStatus = document.getElementById('authPlanStatus');
+
+  if (proActive) {
+    const daysLeft = Math.max(1, Math.ceil((userSubscription.proUntil - Date.now()) / (1000 * 60 * 60 * 24)));
+    if (badgeText) badgeText.innerText = `PRO (${daysLeft}d)`;
+    if (badge) badge.className = "bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm flex items-center gap-1";
+    if (planStatus) planStatus.innerText = `PRO ACTIVE • ${daysLeft} Days Left 👑`;
+    document.querySelectorAll('.pro-lock-badge').forEach(el => el.classList.add('hidden'));
+  } else {
+    if (badgeText) badgeText.innerText = "Get Pro";
+    if (badge) badge.className = "bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm hover:scale-105 transition flex items-center gap-1";
+    if (planStatus) planStatus.innerText = "Free Plan (Upgrade to Pro)";
+    document.querySelectorAll('.pro-lock-badge').forEach(el => el.classList.remove('hidden'));
+    hideWatermark = false;
+    document.getElementById('editorWatermark')?.classList.remove('hidden');
+  }
+}
+
+function openPricingModal() {
+  updateAuthUI();
+  updateProUI();
+  document.getElementById('pricingModal')?.classList.remove('hidden');
+}
+
+function closePricingModal() {
+  document.getElementById('pricingModal')?.classList.add('hidden');
+}
+
+function selectPlan(planId) {
+  selectedPlanId = planId;
+  const c30 = document.getElementById('plan-card-30days');
+  const c90 = document.getElementById('plan-card-90days');
+  const btnText = document.getElementById('payBtnText');
+
+  if (planId === '30days') {
+    c30.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-amber-500 bg-amber-50/60 transition relative shadow-md";
+    c90.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-gray-200 bg-gray-50/50 transition relative";
+    if (btnText) btnText.innerText = "Unlock 30 Days Pass — ₹49";
+  } else {
+    c90.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-amber-500 bg-amber-50/60 transition relative shadow-md";
+    c30.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-gray-200 bg-gray-50/50 transition relative";
+    if (btnText) btnText.innerText = "Unlock 90 Days Pass — ₹99";
+  }
+}
+
+async function startInstamojoPayment() {
+  if (!currentAuthUser) {
+    await loginWithGoogle();
+    return;
+  }
+
+  const btn = document.getElementById('payNowBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Redirecting to Instamojo...';
+
+  try {
+    const meta = currentAuthUser.user_metadata || {};
+    const res = await fetch(`${FUNCTIONS_URL}/create-instamojo-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        planId: selectedPlanId,
+        uid: currentAuthUser.id,
+        name: meta.full_name || user.name,
+        email: currentAuthUser.email || "",
+        phone: user.contact || ""
+      })
+    });
+
+    const data = await res.json();
+    if (!data.paymentUrl) throw new Error(data.error || "Payment link nahi ban paya");
+    window.location.href = data.paymentUrl;
+  } catch (err) {
+    alert("Payment start nahi ho paya: " + err.message);
+    btn.disabled = false;
+    selectPlan(selectedPlanId);
+  }
+}
+
+async function checkInstamojoReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const paymentId = params.get('payment_id');
+  const paymentRequestId = params.get('payment_request_id');
+  const paymentStatus = params.get('payment_status');
+
+  if (!paymentId || !paymentRequestId) return;
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  if (paymentStatus !== 'Credit') {
+    alert("Payment complete nahi hua (Status: " + (paymentStatus || 'Failed') + ").");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${FUNCTIONS_URL}/verify-instamojo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ payment_id: paymentId, payment_request_id: paymentRequestId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (sb && !currentAuthUser) {
+        const { data: sessionData } = await sb.auth.getSession();
+        currentAuthUser = sessionData?.session?.user || null;
+      }
+      if (currentAuthUser) await fetchUserSubscription(currentAuthUser.id);
+      alert("🎉 Badhai ho! Aapka Posty Pro Pass activate ho gaya hai!");
+    } else {
+      alert("Payment verification failed: " + (data.error || ""));
+    }
+  } catch (err) {
+    console.error("Verify error:", err);
+  }
+}
+
+function toggleWatermark() {
+  hideWatermark = !hideWatermark;
+  const wm = document.getElementById('editorWatermark');
+  if (wm) wm.classList.toggle('hidden', hideWatermark);
+}
+
+// === PWA SETUP ===
 function setupPWA() {
   const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     ? import.meta.env.BASE_URL
     : `${import.meta.env.BASE_URL}/`;
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(`${baseUrl}sw.js`)
-      .then(() => console.log('Service Worker Registered'))
-      .catch((err) => console.log('SW Error:', err));
+    navigator.serviceWorker.register(`${baseUrl}sw.js`).catch(() => {});
   }
 
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -233,6 +478,7 @@ function startApp() {
   if (navPic) navPic.src = user.pic;
 }
 
+// === FEED & CATEGORIES ===
 function initPostersData() {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
@@ -447,6 +693,10 @@ function openEditor(src) {
   document.getElementById('modalProfileContact').innerText = user.contact;
   document.getElementById('modalProfilePic').src = user.pic;
   document.getElementById('posterQuoteBox')?.classList.add('hidden');
+  if (!isProUser()) {
+    hideWatermark = false;
+    document.getElementById('editorWatermark')?.classList.remove('hidden');
+  }
 
   renderSocials();
 
@@ -468,7 +718,6 @@ function openEditor(src) {
   window.history.pushState({ editorOpen: true }, "");
 }
 
-// PRO STYLE FUNCTIONS
 function setTextColor(color) {
   const overlay = document.getElementById('profileOverlay');
   if (overlay) overlay.style.color = color;
@@ -751,5 +1000,7 @@ Object.assign(window, {
   cancelCrop, performCrop, showDownloadOptions, sharePoster, changeProfileShape,
   applyFilter, changeProfileBackground, downloadPoster, openEditor,
   shareFeedItem, downloadFeedItem, filterCategory, toggleFavorite,
-  setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote
+  setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote,
+  isProUser, requirePro, loginWithGoogle, logoutGoogle, openPricingModal,
+  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark
 });

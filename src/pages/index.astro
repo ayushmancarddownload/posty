@@ -6,6 +6,7 @@ import SetupModal from '../components/SetupModal.astro';
 import Navbar from '../components/Navbar.astro';
 import EditorModal from '../components/EditorModal.astro';
 import InstallBanner from '../components/InstallBanner.astro';
+import PricingModal from '../components/PricingModal.astro';
 
 const baseUrl = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
@@ -51,6 +52,7 @@ if (fs.existsSync(postersDir)) {
 
   <InstallBanner />
   <EditorModal />
+  <PricingModal />
 
   <script src="../scripts/app.js"></script>
 </Layout>

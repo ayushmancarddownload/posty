@@ -1,0 +1,82 @@
+<div id="pricingModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[350] hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border border-amber-200 max-h-[92vh] overflow-y-auto">
+    <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 p-5 text-white relative text-center">
+      <button onclick="closePricingModal()" class="absolute top-3 right-3 bg-white/20 hover:bg-white/30 w-8 h-8 rounded-full flex items-center justify-center text-white">
+        <i class="fas fa-times text-xs"></i>
+      </button>
+      <div class="inline-flex items-center gap-1.5 bg-black/25 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2">
+        <i class="fas fa-crown text-yellow-300"></i> Posty Pro Pass
+      </div>
+      <h2 class="text-xl font-bold">Unlock All Pro Features ✨</h2>
+      <p class="text-xs text-white/90 mt-1">Bina Watermark ke 4K Posters & Custom Design</p>
+    </div>
+
+    <div class="p-5 space-y-4">
+      <!-- Google Login Status -->
+      <div id="authStatusBox" class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between">
+        <div id="loggedOutView" class="w-full flex items-center justify-between gap-2">
+          <div>
+            <p class="text-xs font-bold text-emerald-800">Google se Login Karein</p>
+            <p class="text-[10px] text-emerald-600">Pass aapke account me save rahega</p>
+          </div>
+          <button onclick="loginWithGoogle()" class="bg-white border border-gray-200 px-3 py-2 rounded-xl shadow-sm flex items-center gap-2 text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-95 transition">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4" alt="G" />
+            Sign in
+          </button>
+        </div>
+
+        <div id="loggedInView" class="hidden w-full flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <img id="authUserAvatar" src="" class="w-9 h-9 rounded-full border border-emerald-300 object-cover shrink-0" />
+            <div class="truncate">
+              <p id="authUserEmail" class="text-xs font-bold text-emerald-900 truncate"></p>
+              <p id="authPlanStatus" class="text-[10px] font-bold text-amber-600">Free Plan</p>
+            </div>
+          </div>
+          <button onclick="logoutGoogle()" class="text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-1.5 rounded-lg hover:bg-red-100 shrink-0">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Plan Cards -->
+      <div class="grid grid-cols-2 gap-3">
+        <div id="plan-card-30days" onclick="selectPlan('30days')" class="cursor-pointer rounded-2xl p-3.5 border-2 border-gray-200 bg-gray-50/50 transition relative">
+          <span class="text-[10px] font-bold uppercase text-gray-500">Monthly Pass</span>
+          <div class="mt-1 flex items-baseline gap-1.5">
+            <span class="text-2xl font-extrabold text-gray-800">₹49</span>
+            <span class="text-xs line-through text-gray-400">₹99</span>
+          </div>
+          <p class="text-[11px] font-bold text-emerald-600 mt-1">30 Days Validity</p>
+          <p class="text-[9px] text-gray-400 mt-0.5">Sirf ₹1.6 / day</p>
+        </div>
+
+        <div id="plan-card-90days" onclick="selectPlan('90days')" class="cursor-pointer rounded-2xl p-3.5 border-2 border-amber-500 bg-amber-50/60 transition relative shadow-md">
+          <span class="absolute -top-2.5 right-3 bg-gradient-to-r from-amber-500 to-rose-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
+            BEST VALUE 🔥
+          </span>
+          <span class="text-[10px] font-bold uppercase text-amber-700">Quarterly Pass</span>
+          <div class="mt-1 flex items-baseline gap-1.5">
+            <span class="text-2xl font-extrabold text-gray-900">₹99</span>
+            <span class="text-xs line-through text-gray-400">₹299</span>
+          </div>
+          <p class="text-[11px] font-bold text-amber-600 mt-1">90 Days Validity</p>
+          <p class="text-[9px] text-amber-700/80 mt-0.5">Save ₹48 extra!</p>
+        </div>
+      </div>
+
+      <!-- Benefits -->
+      <div class="bg-gray-50 rounded-2xl p-3.5 space-y-2 text-xs text-gray-700">
+        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> <span><b>No Watermark</b> (Apna Clean Poster Download)</span></div>
+        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> <span><b>4K Ultra HD</b> Quality Export</span></div>
+        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> <span><b>Pro Frames, Text Colors & 4 Card Layouts</b></span></div>
+        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> <span><b>Apni Photo Upload</b> & Custom Quote Maker</span></div>
+      </div>
+
+      <button id="payNowBtn" onclick="startInstamojoPayment()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-sm shadow-lg shadow-orange-200 hover:scale-[1.01] active:scale-95 transition flex items-center justify-center gap-2">
+        <i class="fas fa-bolt"></i> <span id="payBtnText">Unlock 90 Days Pass — ₹99</span>
+      </button>
+      <p class="text-[10px] text-center text-gray-400">100% Secure UPI / PhonePe / GPay / Cards via Instamojo</p>
+    </div>
+  </div>
+</div>
