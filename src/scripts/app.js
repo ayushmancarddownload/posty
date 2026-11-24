@@ -67,7 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupPWA() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
+    const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+navigator.serviceWorker.register(`${baseUrl}sw.js`)
       .then(() => console.log('Service Worker Registered'))
       .catch((err) => console.log('SW Error:', err));
   }

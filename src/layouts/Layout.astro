@@ -1,6 +1,9 @@
 ---
 import '../styles/global.css';
 const { title = "Aesthetic Poster Maker ✨" } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 ---
 
 <!DOCTYPE html>
@@ -16,7 +19,7 @@ const { title = "Aesthetic Poster Maker ✨" } = Astro.props;
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Posty" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2917/2917995.png" />
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href={`${baseUrl}manifest.json`} />
 
   <!-- External Libraries -->
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

@@ -7,13 +7,16 @@ import Navbar from '../components/Navbar.astro';
 import EditorModal from '../components/EditorModal.astro';
 import InstallBanner from '../components/InstallBanner.astro';
 
-// public/posters folder se saari images apne aap read karega
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+
 const postersDir = path.join(process.cwd(), 'public', 'posters');
 let localPosters = [];
 if (fs.existsSync(postersDir)) {
   localPosters = fs.readdirSync(postersDir)
-    .filter((file) => /\.(jpg|jpeg|png|webp|gif)$/i.test(file))
-    .map((file) => `/posters/${file}`);
+    .filter((file) => /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file))
+    .map((file) => `${baseUrl}posters/${file}`);
 }
 ---
 

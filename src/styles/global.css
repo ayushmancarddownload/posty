@@ -101,7 +101,7 @@ body {
 }
 
 .gallery-item img.main-img {
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.5s ease;
   width: 100%;
   display: block;
