@@ -12,7 +12,7 @@
       <div class="flex flex-col gap-1 max-h-48 overflow-y-auto pr-2">
         <button onclick="selectFont('font-poppins')" class="w-full text-left p-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 transition font-poppins mb-1 text-emerald-700">Poppins</button>
         <button onclick="selectFont('font-playfair')" class="w-full text-left p-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 transition font-playfair mb-1 text-emerald-700">Playfair</button>
-        <button onclick="selectFont('font-meow-script')" class="w-full text-left p-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 transition font-meow-script text-lg mb-1 text-teal-600">Meow</button>
+        <button onclick="selectFont('font-meow-script')" class="w-full text-left p-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 transition font-meow-script text-lg mb-1 text-teal-600">Meow Script</button>
         <button onclick="selectFont('font-pacifico')" class="w-full text-left p-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 transition font-pacifico mb-1 text-emerald-700">Pacifico</button>
         <button onclick="selectFont('font-quicksand')" class="w-full text-left p-3 text-sm bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 transition font-quicksand mb-1 text-emerald-700">Quicksand</button>
       </div>
@@ -25,17 +25,48 @@
       </h4>
       <div class="grid grid-cols-3 gap-2">
         <button onclick="setTheme('left')" class="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm hover:bg-emerald-100 transition flex flex-col items-center gap-1">
-          <i class="fas fa-align-left text-emerald-500 text-xs"></i>
-          <span class="text-[9px] font-bold uppercase text-emerald-400">Left</span>
+          <i class="fas fa-align-left text-emerald-500 text-xs"></i><span class="text-[9px] font-bold uppercase text-emerald-400">Left</span>
         </button>
         <button onclick="setTheme('center')" class="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm hover:bg-emerald-100 transition flex flex-col items-center gap-1">
-          <i class="fas fa-align-center text-emerald-500 text-xs"></i>
-          <span class="text-[9px] font-bold uppercase text-emerald-400">Center</span>
+          <i class="fas fa-align-center text-emerald-500 text-xs"></i><span class="text-[9px] font-bold uppercase text-emerald-400">Center</span>
         </button>
         <button onclick="setTheme('right')" class="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm hover:bg-emerald-100 transition flex flex-col items-center gap-1">
-          <i class="fas fa-align-right text-emerald-500 text-xs"></i>
-          <span class="text-[9px] font-bold uppercase text-emerald-400">Right</span>
+          <i class="fas fa-align-right text-emerald-500 text-xs"></i><span class="text-[9px] font-bold uppercase text-emerald-400">Right</span>
         </button>
+      </div>
+    </div>
+
+    <!-- NEW PRO STYLE PANEL: Colors, Frames & Card Layouts -->
+    <div id="proStylePanel" class="hidden overlay-panel-top glass-panel-aesthetic p-4 rounded-3xl shadow-2xl">
+      <h4 class="text-[10px] font-bold mb-3 flex justify-between uppercase tracking-wider text-emerald-600">
+        Pro Styles ✨ <span onclick="togglePanel('proStylePanel')" class="text-emerald-300 cursor-pointer italic">✕</span>
+      </h4>
+
+      <p class="text-[10px] font-bold text-emerald-700 mb-1.5">Text Color</p>
+      <div class="flex gap-2 mb-3">
+        <button onclick="setTextColor('#ffffff')" class="w-7 h-7 rounded-full bg-white border-2 border-gray-300 shadow-sm"></button>
+        <button onclick="setTextColor('#fde047')" class="w-7 h-7 rounded-full bg-yellow-300 border-2 border-white shadow-sm"></button>
+        <button onclick="setTextColor('#6ee7b7')" class="w-7 h-7 rounded-full bg-emerald-300 border-2 border-white shadow-sm"></button>
+        <button onclick="setTextColor('#fda4af')" class="w-7 h-7 rounded-full bg-rose-300 border-2 border-white shadow-sm"></button>
+        <button onclick="setTextColor('#7dd3fc')" class="w-7 h-7 rounded-full bg-sky-300 border-2 border-white shadow-sm"></button>
+        <button onclick="setTextColor('#111827')" class="w-7 h-7 rounded-full bg-gray-900 border-2 border-white shadow-sm"></button>
+      </div>
+
+      <p class="text-[10px] font-bold text-emerald-700 mb-1.5">Photo Frame Ring</p>
+      <div class="grid grid-cols-5 gap-1.5 mb-3">
+        <button onclick="setPhotoRing('ring-white')" class="py-1.5 text-[9px] font-bold bg-white rounded-lg border border-emerald-200">White</button>
+        <button onclick="setPhotoRing('ring-gold')" class="py-1.5 text-[9px] font-bold bg-amber-100 text-amber-700 rounded-lg border border-amber-300">Gold</button>
+        <button onclick="setPhotoRing('ring-emerald')" class="py-1.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-300">Mint</button>
+        <button onclick="setPhotoRing('ring-pink')" class="py-1.5 text-[9px] font-bold bg-rose-100 text-rose-700 rounded-lg border border-rose-300">Rose</button>
+        <button onclick="setPhotoRing('ring-none')" class="py-1.5 text-[9px] font-bold bg-gray-100 text-gray-600 rounded-lg">None</button>
+      </div>
+
+      <p class="text-[10px] font-bold text-emerald-700 mb-1.5">Card Layout</p>
+      <div class="grid grid-cols-2 gap-1.5">
+        <button onclick="setCardLayout('classic')" class="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">Classic Banner</button>
+        <button onclick="setCardLayout('overlay')" class="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">Image Overlay</button>
+        <button onclick="setCardLayout('pill')" class="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">Floating Pill</button>
+        <button onclick="setCardLayout('glass')" class="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">Dark Glass</button>
       </div>
     </div>
 
@@ -63,15 +94,21 @@
       <div class="relative">
         <img id="modalImage" class="w-full h-auto block" src="" crossorigin="anonymous" />
         <img id="userLogoImg" class="absolute top-2 right-2 w-12 h-12 object-contain drop-shadow-xl z-30 transition-all duration-300" src="" crossorigin="anonymous" alt="Logo" />
-        <div class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full backdrop-blur-[1px]">
-          <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.3em] uppercase drop-shadow-md">Generated By Mysite.com</span>
+
+        <!-- NEW: Optional Quote Overlay on Poster -->
+        <div id="posterQuoteBox" onclick="openQuotePanel()" class="hidden absolute inset-x-4 top-1/2 -translate-y-1/2 z-30 text-center cursor-pointer">
+          <p id="posterQuoteText" class="text-white font-bold text-base sm:text-lg px-4 py-2.5 rounded-2xl bg-black/50 drop-shadow-lg inline-block leading-snug"></p>
+        </div>
+
+        <div class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full">
+          <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.3em] uppercase drop-shadow-md">postbnao.com</span>
         </div>
       </div>
 
       <div id="profileOverlay" class="poster-overlay-container theme-left" style="background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.6));">
         <div class="profile-group">
           <div class="profile-pic-container relative cursor-pointer group" onclick="document.getElementById('updateProfilePicInput').click()" title="Change Picture">
-            <img id="modalProfilePic" class="w-16 h-16 rounded-full border-4 border-white/30 shadow-xl object-cover" style="width: 80px; height: 80px;" />
+            <img id="modalProfilePic" class="w-16 h-16 rounded-full ring-white shadow-xl object-cover" style="width: 80px; height: 80px;" />
             <div class="capture-hide absolute inset-0 flex items-center justify-center bg-black/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
               <i class="fas fa-pen text-white text-xs"></i>
             </div>
@@ -105,6 +142,18 @@
     </div>
     <div class="h-40 w-full"></div>
 
+    <!-- Quote Edit UI -->
+    <div id="quoteEditPanel" class="hidden overlay-panel-top glass-panel-aesthetic p-5 rounded-3xl z-[250] shadow-2xl">
+      <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2 flex justify-between">
+        Poster Quote / Shayari <span onclick="togglePanel('quoteEditPanel')" class="cursor-pointer text-emerald-400">✕</span>
+      </h4>
+      <textarea id="quoteInput" rows="3" class="w-full p-3 rounded-xl bg-white border border-emerald-100 outline-none mb-3 text-xs text-emerald-700" placeholder="Apna message ya quote likhein..."></textarea>
+      <div class="flex gap-2">
+        <button onclick="removePosterQuote()" class="w-1/3 bg-red-50 text-red-500 py-2 rounded-xl text-xs font-bold">Remove</button>
+        <button onclick="savePosterQuote()" class="w-2/3 bg-emerald-500 text-white py-2 rounded-xl text-xs font-bold shadow-md">Poster par Lagao</button>
+      </div>
+    </div>
+
     <!-- Text Edit UI -->
     <div id="textEditPanel" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 glass-panel-aesthetic p-6 rounded-3xl z-[250] w-64 shadow-2xl">
       <input type="text" id="textEditInput" class="w-full p-3 rounded-xl bg-white border border-emerald-100 outline-none mb-3 text-sm shadow-inner text-emerald-600" placeholder="Enter text..." />
@@ -115,9 +164,7 @@
     <div id="socialsEditPanel" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 glass-panel-aesthetic p-6 rounded-3xl z-[250] w-72 shadow-2xl">
       <div class="flex justify-between items-center mb-3">
         <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-widest">Socials</h4>
-        <button id="editorSocialsToggle" onclick="toggleEditorSocials()" class="text-emerald-500 hover:text-emerald-700 transition" title="Toggle Section">
-          <i class="fas fa-eye"></i>
-        </button>
+        <button id="editorSocialsToggle" onclick="toggleEditorSocials()" class="text-emerald-500 hover:text-emerald-700 transition"><i class="fas fa-eye"></i></button>
       </div>
       <div class="space-y-2 mb-3">
         <div class="flex items-center gap-2">
@@ -125,27 +172,21 @@
             <i class="fab fa-instagram absolute left-3 top-2.5 text-emerald-400 text-xs"></i>
             <input type="text" id="editInstaInput" class="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-emerald-100 outline-none text-emerald-700 text-xs" placeholder="@insta" />
           </div>
-          <button onclick="toggleEditorPlatform('insta')" id="btn-insta" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl border border-emerald-100 text-emerald-400 hover:bg-emerald-50 transition">
-            <i class="fas fa-eye"></i>
-          </button>
+          <button onclick="toggleEditorPlatform('insta')" id="btn-insta" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl border border-emerald-100 text-emerald-400"><i class="fas fa-eye"></i></button>
         </div>
         <div class="flex items-center gap-2">
           <div class="relative flex-1">
             <i class="fab fa-twitter absolute left-3 top-2.5 text-emerald-400 text-xs"></i>
             <input type="text" id="editTwitterInput" class="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-emerald-100 outline-none text-emerald-700 text-xs" placeholder="@twitter" />
           </div>
-          <button onclick="toggleEditorPlatform('twitter')" id="btn-twitter" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl border border-emerald-100 text-emerald-400 hover:bg-emerald-50 transition">
-            <i class="fas fa-eye"></i>
-          </button>
+          <button onclick="toggleEditorPlatform('twitter')" id="btn-twitter" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl border border-emerald-100 text-emerald-400"><i class="fas fa-eye"></i></button>
         </div>
         <div class="flex items-center gap-2">
           <div class="relative flex-1">
             <i class="fab fa-facebook-f absolute left-3 top-2.5 text-emerald-400 text-xs"></i>
             <input type="text" id="editFbInput" class="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-emerald-100 outline-none text-emerald-700 text-xs" placeholder="Facebook ID" />
           </div>
-          <button onclick="toggleEditorPlatform('fb')" id="btn-fb" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl border border-emerald-100 text-emerald-400 hover:bg-emerald-50 transition">
-            <i class="fas fa-eye"></i>
-          </button>
+          <button onclick="toggleEditorPlatform('fb')" id="btn-fb" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl border border-emerald-100 text-emerald-400"><i class="fas fa-eye"></i></button>
         </div>
       </div>
       <div class="flex gap-2">
@@ -157,37 +198,36 @@
     <!-- Image Cropper Modal -->
     <div id="cropperModal" class="fixed inset-0 bg-black/80 z-[1100] hidden flex flex-col items-center justify-center p-4">
       <div class="bg-white rounded-[2rem] w-full max-w-xs h-[60vh] flex flex-col shadow-2xl relative overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100 flex-shrink-0 bg-white z-10 text-center">
-          <h3 class="text-emerald-600 font-bold text-sm">Adjust Photo</h3>
-        </div>
+        <div class="px-5 py-3 border-b border-gray-100 flex-shrink-0 bg-white z-10 text-center"><h3 class="text-emerald-600 font-bold text-sm">Adjust Photo</h3></div>
         <div class="flex-1 bg-gray-50 relative w-full min-h-0 overflow-hidden p-6 flex items-center justify-center touch-none">
           <img id="imageToCrop" src="" class="max-w-full max-h-full block object-contain" crossorigin="anonymous" />
         </div>
         <div class="p-3 border-t border-gray-100 bg-white flex-shrink-0 z-10 flex gap-2">
-          <button onclick="cancelCrop()" class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-500 font-bold text-xs hover:bg-gray-200 transition">Skip</button>
-          <button onclick="performCrop()" class="flex-1 py-2 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-200 hover:scale-[1.02] transition">Save</button>
+          <button onclick="cancelCrop()" class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-500 font-bold text-xs">Skip</button>
+          <button onclick="performCrop()" class="flex-1 py-2 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md">Save</button>
         </div>
       </div>
     </div>
-
     <input type="file" id="updateProfilePicInput" accept="image/*" class="hidden" />
   </div>
 </div>
 
 <!-- Floating Action Buttons -->
-<div id="floatingButtonsContainer" class="fixed bottom-8 left-0 right-0 z-[110] px-4 hidden">
-  <div class="bg-emerald-50/95 backdrop-blur-md p-3 rounded-[2.5rem] shadow-2xl max-w-lg mx-auto border border-emerald-100">
+<div id="floatingButtonsContainer" class="fixed bottom-6 left-0 right-0 z-[110] px-3 hidden">
+  <div class="bg-emerald-50/95 backdrop-blur-md p-2.5 rounded-[2.5rem] shadow-2xl max-w-lg mx-auto border border-emerald-100">
     <div class="floating-bar-wrap">
-      <button onclick="showDownloadOptions()" class="w-6 h-6 bg-gradient-to-tr from-emerald-500 to-teal-500 text-white rounded-full shadow-lg hover:scale-110 transition active:scale-90 flex items-center justify-center" title="Save Image"><i class="fas fa-download text-xs"></i></button>
-      <button onclick="sharePoster()" class="w-6 h-6 bg-gradient-to-tr from-cyan-400 to-emerald-400 text-white rounded-full shadow-lg hover:scale-110 transition active:scale-90 flex items-center justify-center" title="Share Directly"><i class="fas fa-share-alt text-xs"></i></button>
-      <div class="w-px h-8 bg-emerald-200 mx-1"></div>
-      <button onclick="editSocials()" class="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Manage Socials"><i class="fas fa-users text-xs"></i></button>
-      <button onclick="togglePanel('fontListPanel')" class="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Fonts"><i class="fas fa-font text-xs"></i></button>
-      <button onclick="togglePanel('alignmentPanel')" class="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Alignment"><i class="fas fa-arrows-alt-h text-xs"></i></button>
-      <button onclick="togglePanel('adjustmentsPanel')" class="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Profile Size & Opacity"><i class="fas fa-expand-alt text-xs"></i></button>
-      <button onclick="changeProfileShape()" class="w-6 h-6 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Shape"><i class="fas fa-shapes text-xs"></i></button>
-      <button onclick="applyFilter()" class="w-6 h-6 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Filters"><i class="fas fa-wand-sparkles text-xs"></i></button>
-      <button onclick="changeProfileBackground()" class="w-6 h-6 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Banner"><i class="fas fa-image text-xs"></i></button>
+      <button onclick="showDownloadOptions()" class="w-8 h-8 bg-gradient-to-tr from-emerald-500 to-teal-500 text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Save Image"><i class="fas fa-download text-xs"></i></button>
+      <button onclick="sharePoster()" class="w-8 h-8 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Share on WhatsApp"><i class="fab fa-whatsapp text-sm"></i></button>
+      <div class="w-px h-6 bg-emerald-200 mx-0.5"></div>
+      <button onclick="togglePanel('proStylePanel')" class="w-8 h-8 bg-amber-100 text-amber-600 rounded-full border border-amber-200 hover:bg-amber-200 transition" title="Colors, Frames & Layouts"><i class="fas fa-palette text-xs"></i></button>
+      <button onclick="openQuotePanel()" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Add Quote"><i class="fas fa-quote-right text-xs"></i></button>
+      <button onclick="togglePanel('fontListPanel')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Fonts"><i class="fas fa-font text-xs"></i></button>
+      <button onclick="togglePanel('alignmentPanel')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Alignment"><i class="fas fa-arrows-alt-h text-xs"></i></button>
+      <button onclick="togglePanel('adjustmentsPanel')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Size & Darkness"><i class="fas fa-sliders-h text-xs"></i></button>
+      <button onclick="editSocials()" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Socials"><i class="fas fa-users text-xs"></i></button>
+      <button onclick="changeProfileShape()" class="w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Shape"><i class="fas fa-shapes text-xs"></i></button>
+      <button onclick="applyFilter()" class="w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Filters"><i class="fas fa-wand-sparkles text-xs"></i></button>
+      <button onclick="changeProfileBackground()" class="w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Banner"><i class="fas fa-image text-xs"></i></button>
     </div>
   </div>
 </div>
@@ -197,7 +237,7 @@
   <div class="cute-card p-8 w-full max-w-xs text-center shadow-2xl border border-emerald-100">
     <h3 class="text-xl font-bold mb-6 italic text-emerald-600">Export Options ✨</h3>
     <div class="space-y-3">
-      <button onclick="downloadPoster(2, this)" class="w-full py-4 bg-emerald-50 rounded-2xl font-bold hover:bg-emerald-100 hover:text-emerald-600 transition text-emerald-600 border border-emerald-100 flex items-center justify-center gap-2">Standard (SD)</button>
+      <button onclick="downloadPoster(2, this)" class="w-full py-4 bg-emerald-50 rounded-2xl font-bold hover:bg-emerald-100 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-2">Standard (SD)</button>
       <button onclick="downloadPoster(4, this)" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">Ultra HD (4K) 🔥</button>
       <button onclick="togglePanel('qualityPopup')" class="w-full py-2 text-emerald-300 text-xs mt-4">Cancel</button>
     </div>

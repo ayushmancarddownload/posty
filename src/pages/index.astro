@@ -13,16 +13,31 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
 
 const postersDir = path.join(process.cwd(), 'public', 'posters');
 let localPosters = [];
+
 if (fs.existsSync(postersDir)) {
-  localPosters = fs.readdirSync(postersDir)
-    .filter((file) => /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file))
-    .map((file) => `${baseUrl}posters/${file}`);
+  const entries = fs.readdirSync(postersDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isFile() && /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(entry.name)) {
+      localPosters.push({ url: encodeURI(`${baseUrl}posters/${entry.name}`), category: 'Trending' });
+    } else if (entry.isDirectory()) {
+      const catName = entry.name.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const subFiles = fs.readdirSync(path.join(postersDir, entry.name));
+      for (const file of subFiles) {
+        if (/\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file)) {
+          localPosters.push({ url: encodeURI(`${baseUrl}posters/${entry.name}/${file}`), category: catName });
+        }
+      }
+    }
+  }
 }
 ---
 
-<Layout title="Aesthetic Poster Maker ✨">
+<Layout title="Posty - Aesthetic Poster Maker ✨">
   <SetupModal />
   <Navbar />
+
+  <!-- Category Pills Bar -->
+  <div id="categoryBar" class="fixed top-[57px] left-0 right-0 z-30 bg-emerald-50/95 backdrop-blur-md border-b border-emerald-100 px-3 py-2 flex gap-2 overflow-x-auto no-scrollbar hidden"></div>
 
   <main id="mainContent" class="hidden">
     <div id="loadingGallery" class="flex flex-col items-center justify-center h-full w-full">

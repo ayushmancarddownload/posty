@@ -3,6 +3,9 @@ import { SITE_LOGO_URL, FEED_OPACITY_BOTTOM, FEED_OPACITY_TOP, MY_GALLERY_IMAGES
 let cropper;
 let deferredPrompt;
 let activeEditId = null;
+let allPosters = [];
+let activeCategory = 'All';
+let favoriteUrls = JSON.parse(localStorage.getItem('postyFavorites') || '[]');
 
 let user = {
   name: "Aesthetic Creator",
@@ -62,15 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
   document.getElementById('updateProfilePicInput')?.addEventListener('change', handleFileSelect);
+  document.getElementById('customPosterInput')?.addEventListener('change', handleCustomPosterUpload);
+
+  initPostersData();
+  renderCategories();
   loadFeed();
 });
 
 function setupPWA() {
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+
   if ('serviceWorker' in navigator) {
-    const baseUrl = import.meta.env.BASE_URL.endsWith('/')
-  ? import.meta.env.BASE_URL
-  : `${import.meta.env.BASE_URL}/`;
-navigator.serviceWorker.register(`${baseUrl}sw.js`)
+    navigator.serviceWorker.register(`${baseUrl}sw.js`)
       .then(() => console.log('Service Worker Registered'))
       .catch((err) => console.log('SW Error:', err));
   }
@@ -120,7 +128,7 @@ function hideModalUI() {
   document.getElementById('modal')?.classList.add('hidden');
   document.getElementById('floatingButtonsContainer')?.classList.add('hidden');
   document.getElementById('bottom-nav')?.classList.remove('hidden');
-  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel', 'cropperModal'].forEach(p => {
+  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel', 'cropperModal'].forEach(p => {
     document.getElementById(p)?.classList.add('hidden');
   });
 }
@@ -135,6 +143,16 @@ function handleFileSelect(event) {
   event.target.value = '';
 }
 
+function handleCustomPosterUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => openEditor(e.target.result);
+    reader.readAsDataURL(file);
+  }
+  event.target.value = '';
+}
+
 function updateAppImage(src) {
   user.pic = src;
   ['modalProfilePic', 'previewProfilePic', 'navUserPic'].forEach(id => {
@@ -144,9 +162,7 @@ function updateAppImage(src) {
   localStorage.setItem('aestheticUser', JSON.stringify(user));
 }
 
-function initManualCrop() {
-  openCropper(user.pic);
-}
+function initManualCrop() { openCropper(user.pic); }
 
 function openCropper(imageSrc) {
   const modal = document.getElementById('cropperModal');
@@ -156,20 +172,10 @@ function openCropper(imageSrc) {
     modal.classList.remove('hidden');
     if (cropper) cropper.destroy();
     cropper = new window.Cropper(image, {
-      aspectRatio: 1,
-      viewMode: 1,
-      dragMode: 'move',
-      autoCropArea: 0.8,
-      restore: false,
-      guides: false,
-      center: true,
-      highlight: false,
-      cropBoxMovable: false,
-      cropBoxResizable: false,
-      toggleDragModeOnDblclick: false,
-      ready() {
-        if (this.cropper) this.cropper.reset();
-      }
+      aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.8,
+      restore: false, guides: false, center: true, highlight: false,
+      cropBoxMovable: false, cropBoxResizable: false, toggleDragModeOnDblclick: false,
+      ready() { if (this.cropper) this.cropper.reset(); }
     });
   }
 }
@@ -178,10 +184,7 @@ function cancelCrop() {
   const image = document.getElementById('imageToCrop');
   if (image && image.src) updateAppImage(image.src);
   document.getElementById('cropperModal')?.classList.add('hidden');
-  if (cropper) {
-    cropper.destroy();
-    cropper = null;
-  }
+  if (cropper) { cropper.destroy(); cropper = null; }
 }
 
 function performCrop() {
@@ -222,6 +225,7 @@ function saveUserSetup() {
 
 function startApp() {
   document.getElementById('mainNav')?.classList.remove('hidden');
+  document.getElementById('categoryBar')?.classList.remove('hidden');
   document.getElementById('mainContent')?.classList.remove('hidden');
   const navName = document.getElementById('navUserName');
   if (navName) navName.innerText = user.name;
@@ -229,21 +233,86 @@ function startApp() {
   if (navPic) navPic.src = user.pic;
 }
 
+function initPostersData() {
+  const gallery = document.getElementById('gallery');
+  if (!gallery) return;
+  const raw = JSON.parse(gallery.dataset.posters || '[]');
+
+  if (raw.length > 0) {
+    allPosters = raw.map(item => typeof item === 'string' ? { url: item, category: 'Trending' } : item);
+  } else if (MY_GALLERY_IMAGES.length > 0) {
+    allPosters = MY_GALLERY_IMAGES.map(url => ({ url, category: 'Trending' }));
+  } else {
+    allPosters = Array.from({ length: 15 }, (_, i) => ({
+      url: `https://picsum.photos/id/${i + 60}/600/800`,
+      category: i % 2 === 0 ? 'Motivation' : 'Trending'
+    }));
+  }
+}
+
+function renderCategories() {
+  const bar = document.getElementById('categoryBar');
+  if (!bar) return;
+  const cats = ['All', ...new Set(allPosters.map(p => p.category)), 'Favorites'];
+
+  bar.innerHTML = cats.map(cat => {
+    const isActive = cat === activeCategory;
+    const classes = isActive
+      ? 'bg-emerald-500 text-white shadow-sm'
+      : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-100';
+    return `<button onclick="filterCategory('${cat}')" class="px-3.5 py-1 rounded-full text-xs font-bold whitespace-nowrap transition ${classes}">${cat === 'Favorites' ? '❤️ Saved' : cat}</button>`;
+  }).join('');
+}
+
+function filterCategory(cat) {
+  activeCategory = cat;
+  renderCategories();
+  loadFeed();
+  document.getElementById('mainContent')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleFavorite(url, btn) {
+  if (favoriteUrls.includes(url)) {
+    favoriteUrls = favoriteUrls.filter(u => u !== url);
+    btn.innerHTML = '<i class="far fa-heart"></i>';
+    btn.classList.remove('text-rose-500', 'bg-rose-50');
+    btn.classList.add('text-emerald-600', 'bg-emerald-50');
+  } else {
+    favoriteUrls.push(url);
+    btn.innerHTML = '<i class="fas fa-heart"></i>';
+    btn.classList.remove('text-emerald-600', 'bg-emerald-50');
+    btn.classList.add('text-rose-500', 'bg-rose-50');
+  }
+  localStorage.setItem('postyFavorites', JSON.stringify(favoriteUrls));
+  if (activeCategory === 'Favorites') loadFeed();
+}
+
 function loadFeed() {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
 
-  const autoPosters = JSON.parse(gallery.dataset.posters || '[]');
-  let images = autoPosters.length > 0
-    ? [...autoPosters]
-    : (MY_GALLERY_IMAGES.length > 0
-      ? [...MY_GALLERY_IMAGES]
-      : Array.from({ length: 24 }, (_, i) => `https://picsum.photos/id/${i + 60}/600/800`));
+  let filtered = allPosters;
+  if (activeCategory === 'Favorites') {
+    filtered = allPosters.filter(p => favoriteUrls.includes(p.url));
+  } else if (activeCategory !== 'All') {
+    filtered = allPosters.filter(p => p.category === activeCategory);
+  }
 
-  images = images.sort(() => Math.random() - 0.5);
+  if (filtered.length === 0) {
+    gallery.innerHTML = `
+      <div class="h-screen flex flex-col items-center justify-center text-center px-6">
+        <i class="far fa-heart text-4xl text-emerald-300 mb-3"></i>
+        <p class="text-emerald-700 font-bold text-sm">Abhi koi poster saved nahi hai!</p>
+        <button onclick="filterCategory('All')" class="mt-3 bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold">All Posters Dekhein</button>
+      </div>`;
+    document.getElementById('loadingGallery')?.classList.add('hidden');
+    return;
+  }
+
+  const displayList = [...filtered].sort(() => Math.random() - 0.5);
   gallery.innerHTML = '';
 
-  images.forEach((url, index) => {
+  displayList.forEach((item, index) => {
     const themes = ['theme-left', 'theme-center', 'theme-right'];
     const randomTheme = themes[Math.floor(Math.random() * themes.length)];
     const randomBg = profileBackgrounds[Math.floor(Math.random() * profileBackgrounds.length)];
@@ -252,46 +321,42 @@ function loadFeed() {
     const div = document.createElement('div');
     div.className = 'gallery-item';
     div.id = `feed-item-${index}`;
-    div.innerHTML = getPosterHTML(url, randomTheme, randomBg, randomFont, index);
+    div.innerHTML = getPosterHTML(item.url, item.category, randomTheme, randomBg, randomFont, index);
     gallery.appendChild(div);
   });
 
   document.getElementById('loadingGallery')?.classList.add('hidden');
 }
 
-function getPosterHTML(url, theme, bg, fontClass, index) {
+function getPosterHTML(url, category, theme, bg, fontClass, index) {
   let socialsHTML = '';
   if (user.socials.visible) {
     const anyVisible = user.socials.insta.visible || user.socials.twitter.visible || user.socials.fb.visible;
     if (anyVisible) {
-      socialsHTML += `<p class="text-[8px] font-bold opacity-80 uppercase tracking-widest mb-0.5 flex items-center gap-1">Follow Me <i class="fas fa-pen text-[8px] opacity-50 capture-hide"></i></p><div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
-      if (user.socials.insta.visible) {
-        socialsHTML += `<div class="info-row"><i class="fab fa-instagram fw-icon ${!user.socials.insta.val ? 'opacity-60' : ''}"></i> ${user.socials.insta.val ? `<span>${user.socials.insta.val}</span>` : ''}</div>`;
-      }
-      if (user.socials.twitter.visible) {
-        socialsHTML += `<div class="info-row"><i class="fab fa-twitter fw-icon ${!user.socials.twitter.val ? 'opacity-60' : ''}"></i> ${user.socials.twitter.val ? `<span>${user.socials.twitter.val}</span>` : ''}</div>`;
-      }
-      if (user.socials.fb.visible) {
-        socialsHTML += `<div class="info-row"><i class="fab fa-facebook-f fw-icon ${!user.socials.fb.val ? 'opacity-60' : ''}"></i> ${user.socials.fb.val ? `<span>${user.socials.fb.val}</span>` : ''}</div>`;
-      }
+      socialsHTML += `<p class="text-[8px] font-bold opacity-80 uppercase tracking-widest mb-0.5 flex items-center gap-1">Follow Me</p><div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
+      if (user.socials.insta.visible) socialsHTML += `<div class="info-row"><i class="fab fa-instagram fw-icon ${!user.socials.insta.val ? 'opacity-60' : ''}"></i> ${user.socials.insta.val ? `<span>${user.socials.insta.val}</span>` : ''}</div>`;
+      if (user.socials.twitter.visible) socialsHTML += `<div class="info-row"><i class="fab fa-twitter fw-icon ${!user.socials.twitter.val ? 'opacity-60' : ''}"></i> ${user.socials.twitter.val ? `<span>${user.socials.twitter.val}</span>` : ''}</div>`;
+      if (user.socials.fb.visible) socialsHTML += `<div class="info-row"><i class="fab fa-facebook-f fw-icon ${!user.socials.fb.val ? 'opacity-60' : ''}"></i> ${user.socials.fb.val ? `<span>${user.socials.fb.val}</span>` : ''}</div>`;
       socialsHTML += `</div>`;
     }
   }
+
+  const isFav = favoriteUrls.includes(url);
 
   return `
     <div class="poster-card-wrapper relative">
       <div id="print-area-${index}" class="poster-capture-area relative w-full" onclick="openEditor('${url}')">
         <div class="relative w-full h-full">
-          <img src="${url}" loading="lazy" class="main-img w-full block" alt="Poster" onload="handleImageLoad(this)" crossorigin="anonymous">
-          <img src="${user.logo || SITE_LOGO_URL}" class="absolute top-2 right-2 w-12 h-12 object-contain drop-shadow-xl z-30" crossorigin="anonymous">
-          <div class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full backdrop-blur-[1px]">
-            <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.3em] uppercase drop-shadow-md">Generated By Mysite.com</span>
+          <img src="${url}" loading="lazy" class="main-img w-full block" alt="${category}" crossorigin="anonymous">
+          <img src="${user.logo || SITE_LOGO_URL}" class="absolute top-2 right-2 w-10 h-10 object-contain drop-shadow-xl z-30" crossorigin="anonymous">
+          <div class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full">
+            <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.2em] uppercase">postbnao.com</span>
           </div>
         </div>
         <div class="poster-overlay-container ${theme}" style="background: linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${bg}');">
           <div class="profile-group">
             <div class="profile-pic-container shrink-0">
-              <img src="${user.pic}" class="w-14 h-14 rounded-full border-2 border-white/50 shadow-lg object-cover bg-white">
+              <img src="${user.pic}" class="w-14 h-14 rounded-full border-2 border-white/60 shadow-lg object-cover bg-white">
             </div>
             <div class="profile-text flex flex-col justify-center ${fontClass || ''}">
               <h3 class="modal-profile-name font-bold text-lg leading-none drop-shadow-md mb-1">${user.name}</h3>
@@ -304,13 +369,21 @@ function getPosterHTML(url, theme, bg, fontClass, index) {
           <div class="social-group">${socialsHTML}</div>
         </div>
       </div>
+
       <div class="action-bar poster-actions-area bg-white p-3 border-t border-gray-100 flex justify-between items-center mt-auto">
-        <div class="flex items-center gap-1 text-emerald-600 text-xs font-bold italic cursor-pointer hover:underline" onclick="openEditor('${url}')">
+        <div class="flex items-center gap-1.5 text-emerald-600 text-xs font-bold italic cursor-pointer hover:underline" onclick="openEditor('${url}')">
           <i class="fas fa-magic"></i> Tap to Edit
         </div>
         <div class="flex gap-2">
-          <button onclick="shareFeedItem('print-area-${index}')" class="bg-emerald-50 text-emerald-600 p-2 rounded-full hover:bg-emerald-100 transition shadow-sm w-9 h-9 flex items-center justify-center"><i class="fas fa-share-alt"></i></button>
-          <button onclick="downloadFeedItem('print-area-${index}', this)" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center"><i class="fas fa-download"></i></button>
+          <button onclick="toggleFavorite('${url}', this)" class="${isFav ? 'text-rose-500 bg-rose-50' : 'text-emerald-600 bg-emerald-50'} p-2 rounded-full transition shadow-sm w-9 h-9 flex items-center justify-center">
+            <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
+          </button>
+          <button onclick="shareFeedItem('print-area-${index}')" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
+            <i class="fab fa-whatsapp"></i>
+          </button>
+          <button onclick="downloadFeedItem('print-area-${index}', this)" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
+            <i class="fas fa-download"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -323,25 +396,18 @@ async function downloadFeedItem(containerId, btn) {
   btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
   try {
     const canvas = await window.html2canvas(captureTarget, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
+      scale: 3, useCORS: true, allowTaint: false, backgroundColor: null,
       onclone: (clonedDoc) => {
         const el = clonedDoc.getElementById(containerId);
-        if (el) {
-          el.style.borderRadius = '0';
-          el.style.border = 'none';
-          el.style.boxShadow = 'none';
-        }
+        if (el) { el.style.borderRadius = '0'; el.style.border = 'none'; el.style.boxShadow = 'none'; }
       }
     });
     const link = document.createElement('a');
-    link.download = `aesthetic-post-${Date.now()}.png`;
+    link.download = `postbnao-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
   } catch (err) {
-    alert("Could not download image. Try opening it first.");
+    alert("Could not download image. Try opening editor.");
   } finally {
     btn.innerHTML = originalIcon;
   }
@@ -352,18 +418,14 @@ async function shareFeedItem(containerId) {
   try {
     const canvas = await window.html2canvas(captureTarget, { scale: 2, useCORS: true });
     canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'poster.png', { type: 'image/png' });
+      const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
       if (navigator.share) {
-        await navigator.share({ files: [file], title: 'Check out this design!' });
+        await navigator.share({ files: [file], title: 'Apne naam aur photo ke sath poster banayein!', text: 'Banayein apna poster: https://postbnao.com/posty/' });
       } else {
-        alert("Sharing not supported on this browser.");
+        alert("WhatsApp direct file share mobile browser par chalta hai — aap Download button se image save karke share kar sakte hain!");
       }
     });
   } catch (err) {}
-}
-
-function handleImageLoad(img) {
-  img.classList.add('loaded');
 }
 
 function adjustNameSize() {
@@ -384,6 +446,7 @@ function openEditor(src) {
   document.getElementById('modalProfileExtra').innerText = user.extra;
   document.getElementById('modalProfileContact').innerText = user.contact;
   document.getElementById('modalProfilePic').src = user.pic;
+  document.getElementById('posterQuoteBox')?.classList.add('hidden');
 
   renderSocials();
 
@@ -405,6 +468,53 @@ function openEditor(src) {
   window.history.pushState({ editorOpen: true }, "");
 }
 
+// PRO STYLE FUNCTIONS
+function setTextColor(color) {
+  const overlay = document.getElementById('profileOverlay');
+  if (overlay) overlay.style.color = color;
+}
+
+function setPhotoRing(ringClass) {
+  const pic = document.getElementById('modalProfilePic');
+  if (!pic) return;
+  pic.classList.remove('ring-white', 'ring-gold', 'ring-emerald', 'ring-pink', 'ring-none');
+  pic.classList.add(ringClass);
+}
+
+function setCardLayout(layout) {
+  const overlay = document.getElementById('profileOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('card-style-overlay', 'card-style-pill', 'card-style-glass');
+  if (layout === 'overlay') overlay.classList.add('card-style-overlay');
+  if (layout === 'pill') overlay.classList.add('card-style-pill');
+  if (layout === 'glass') overlay.classList.add('card-style-glass');
+}
+
+function openQuotePanel() {
+  const currentQuote = document.getElementById('posterQuoteText')?.innerText || '';
+  document.getElementById('quoteInput').value = currentQuote;
+  togglePanel('quoteEditPanel');
+}
+
+function savePosterQuote() {
+  const val = document.getElementById('quoteInput').value.trim();
+  const box = document.getElementById('posterQuoteBox');
+  const textEl = document.getElementById('posterQuoteText');
+  if (val) {
+    textEl.innerText = val;
+    box.classList.remove('hidden');
+  } else {
+    box.classList.add('hidden');
+  }
+  document.getElementById('quoteEditPanel')?.classList.add('hidden');
+}
+
+function removePosterQuote() {
+  document.getElementById('posterQuoteText').innerText = '';
+  document.getElementById('posterQuoteBox')?.classList.add('hidden');
+  document.getElementById('quoteEditPanel')?.classList.add('hidden');
+}
+
 function renderSocials() {
   const socialsContainer = document.getElementById('socialsContainer');
   const mainSection = document.querySelector('#profileOverlay .social-media-section');
@@ -420,13 +530,11 @@ function renderSocials() {
   }
 
   let itemsHTML = `<div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
-  const platforms = [
+  [
     { icon: 'fab fa-instagram', data: user.socials?.insta },
     { icon: 'fab fa-twitter', data: user.socials?.twitter },
     { icon: 'fab fa-facebook-f', data: user.socials?.fb }
-  ];
-
-  platforms.forEach(p => {
+  ].forEach(p => {
     if (!p.data?.visible) return;
     itemsHTML += p.data.val
       ? `<div class="info-row"><i class="${p.icon} fw-icon"></i> <span>${p.data.val}</span></div>`
@@ -445,7 +553,7 @@ function editSocials() {
   updateToggleButton('btn-twitter', user.socials.twitter.visible);
   updateToggleButton('btn-fb', user.socials.fb.visible);
 
-  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'qualityPopup', 'textEditPanel'].forEach(p => document.getElementById(p)?.classList.add('hidden'));
+  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel'].forEach(p => document.getElementById(p)?.classList.add('hidden'));
   document.getElementById('socialsEditPanel')?.classList.remove('hidden');
 }
 
@@ -494,7 +602,7 @@ function closeModal() {
 
 function togglePanel(id) {
   const panel = document.getElementById(id);
-  const panels = ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel'];
+  const panels = ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel'];
   if (panel && panel.classList.contains('hidden')) {
     panels.forEach(p => document.getElementById(p)?.classList.add('hidden'));
     panel.classList.remove('hidden');
@@ -558,14 +666,13 @@ async function sharePoster() {
   const captureArea = document.getElementById('captureArea');
   try {
     const canvas = await window.html2canvas(captureArea, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
+      scale: 2, useCORS: true, backgroundColor: null,
       onclone: (clonedDoc) => clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none')
     });
     canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'poster.png', { type: 'image/png' });
-      if (navigator.share) await navigator.share({ files: [file], title: 'Look at my Aesthetic Poster! ✨' });
+      const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
+      if (navigator.share) await navigator.share({ files: [file], title: 'Look at my Poster! ✨' });
+      else alert("Mobile browser par WhatsApp direct share chalta hai — aap Download karke share karein!");
     });
   } catch (err) {}
 }
@@ -579,22 +686,15 @@ async function downloadPoster(scale, btn) {
 
   try {
     const canvas = await window.html2canvas(document.getElementById('captureArea'), {
-      scale,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
+      scale, useCORS: true, allowTaint: false, backgroundColor: null,
       onclone: (clonedDoc) => {
         clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
         const captureDiv = clonedDoc.getElementById('captureArea');
-        if (captureDiv) {
-          captureDiv.style.border = 'none';
-          captureDiv.style.boxShadow = 'none';
-          captureDiv.style.borderRadius = '0';
-        }
+        if (captureDiv) { captureDiv.style.border = 'none'; captureDiv.style.boxShadow = 'none'; captureDiv.style.borderRadius = '0'; }
       }
     });
     const link = document.createElement('a');
-    link.download = `poster-${Date.now()}.png`;
+    link.download = `postbnao-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
 
@@ -607,11 +707,7 @@ async function downloadPoster(scale, btn) {
     }, 1000);
   } catch (err) {
     btn.innerHTML = '<i class="fas fa-times"></i> Error';
-    setTimeout(() => {
-      btn.innerHTML = originalText;
-      btn.className = originalClass;
-      btn.disabled = false;
-    }, 2000);
+    setTimeout(() => { btn.innerHTML = originalText; btn.className = originalClass; btn.disabled = false; }, 2000);
   }
 }
 
@@ -629,9 +725,7 @@ function saveProfileText() {
   if (activeEditId === 'modalProfileName') adjustNameSize();
 }
 
-function showDownloadOptions() {
-  togglePanel('qualityPopup');
-}
+function showDownloadOptions() { togglePanel('qualityPopup'); }
 
 function toggleEditProfilePopup() {
   const modal = document.getElementById('userDetailsModal');
@@ -655,6 +749,7 @@ Object.assign(window, {
   selectFont, setTheme, updateProfileSize, updateCardOpacity, editProfileText,
   editSocials, saveProfileText, toggleEditorSocials, toggleEditorPlatform, saveSocials,
   cancelCrop, performCrop, showDownloadOptions, sharePoster, changeProfileShape,
-  applyFilter, changeProfileBackground, downloadPoster, openEditor, handleImageLoad,
-  shareFeedItem, downloadFeedItem
+  applyFilter, changeProfileBackground, downloadPoster, openEditor,
+  shareFeedItem, downloadFeedItem, filterCategory, toggleFavorite,
+  setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote
 });
