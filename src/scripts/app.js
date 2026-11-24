@@ -264,9 +264,9 @@ async function startInstamojoPayment() {
 
     const data = await res.json();
     if (!data.paymentUrl) {
-      const errMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error || data);
-      throw new Error(errMsg);
-    } throw new Error(data.error || "Payment link nahi ban paya");
+      const errMsg = data.error || data.message || JSON.stringify(data);
+      throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    }
     window.location.href = data.paymentUrl;
   } catch (err) {
     alert("Payment start nahi ho paya: " + err.message);
