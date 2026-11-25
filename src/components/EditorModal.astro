@@ -95,7 +95,7 @@
         <img id="modalImage" class="w-full h-auto block" src="" crossorigin="anonymous" />
         <img id="userLogoImg" class="absolute top-2 right-2 w-12 h-12 object-contain drop-shadow-xl z-30 transition-all duration-300" src="" crossorigin="anonymous" alt="Logo" />
 
-        <!-- Optional Quote Overlay on Poster -->
+        <!-- Optional Quote Overlay on Poster (Locked for Pro) -->
         <div id="posterQuoteBox" onclick="requirePro(() => openQuotePanel())" class="hidden absolute inset-x-4 top-1/2 -translate-y-1/2 z-30 text-center cursor-pointer">
           <p id="posterQuoteText" class="text-white font-bold text-base sm:text-lg px-4 py-2.5 rounded-2xl bg-black/50 drop-shadow-lg inline-block leading-snug"></p>
         </div>
@@ -108,24 +108,26 @@
 
       <div id="profileOverlay" class="poster-overlay-container theme-left" style="background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.6));">
         <div class="profile-group">
-          <div class="profile-pic-container relative cursor-pointer group" onclick="document.getElementById('updateProfilePicInput').click()" title="Change Picture">
+          <!-- Profile Pic & Crop Locked for Pro -->
+          <div class="profile-pic-container relative cursor-pointer group" onclick="requirePro(() => document.getElementById('updateProfilePicInput').click())" title="Change Picture">
             <img id="modalProfilePic" crossorigin="anonymous" class="w-16 h-16 rounded-full ring-white shadow-xl object-cover" style="width: 80px; height: 80px;" />
             <div class="capture-hide absolute inset-0 flex items-center justify-center bg-black/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
               <i class="fas fa-pen text-white text-xs"></i>
             </div>
-            <button onclick="event.stopPropagation(); initManualCrop();" class="capture-hide absolute bottom-0 -left-1 bg-white shadow-md rounded-full w-6 h-6 flex items-center justify-center cursor-pointer hover:bg-emerald-50 transition border border-emerald-100 z-20" title="Adjust Photo">
+            <button onclick="event.stopPropagation(); requirePro(() => initManualCrop());" class="capture-hide absolute bottom-0 -left-1 bg-white shadow-md rounded-full w-6 h-6 flex items-center justify-center cursor-pointer hover:bg-emerald-50 transition border border-emerald-100 z-20" title="Adjust Photo">
               <i class="fas fa-crop text-emerald-500 text-[10px]"></i>
             </button>
           </div>
 
+          <!-- Profile Text Edits Locked for Pro -->
           <div class="profile-text transition-all duration-300 flex flex-col">
-            <h3 class="modal-profile-name font-bold text-xl drop-shadow-md cursor-pointer mb-1" id="modalProfileName" onclick="editProfileText('modalProfileName')">Name</h3>
+            <h3 class="modal-profile-name font-bold text-xl drop-shadow-md cursor-pointer mb-1" id="modalProfileName" onclick="requirePro(() => editProfileText('modalProfileName'))">Name</h3>
             <div class="details-block">
-              <div class="info-row cursor-pointer" onclick="editProfileText('modalProfileExtra')">
+              <div class="info-row cursor-pointer" onclick="requirePro(() => editProfileText('modalProfileExtra'))">
                 <i class="fas fa-briefcase text-xs fw-icon"></i>
                 <p id="modalProfileExtra" class="text-xs">Web Developer</p>
               </div>
-              <div class="info-row contact-wrapper cursor-pointer hover:opacity-100 transition" onclick="editProfileText('modalProfileContact')">
+              <div class="info-row contact-wrapper cursor-pointer hover:opacity-100 transition" onclick="requirePro(() => editProfileText('modalProfileContact'))">
                 <i class="fab fa-whatsapp text-sm fw-icon"></i>
                 <p id="modalProfileContact" class="text-[10px]">9876543210</p>
               </div>
@@ -133,7 +135,8 @@
           </div>
         </div>
 
-        <div class="social-media-section social-group cursor-pointer hover:opacity-80 transition" onclick="editSocials()">
+        <!-- Social Media Edit Locked for Pro -->
+        <div class="social-media-section social-group cursor-pointer hover:opacity-80 transition" onclick="requirePro(() => editSocials())">
           <p class="text-[8px] font-bold opacity-80 uppercase tracking-widest mb-0.5 flex items-center gap-1">
             Follow Me <i class="fas fa-pen text-[8px] opacity-50 capture-hide"></i>
           </p>
@@ -224,67 +227,95 @@
   </div>
 </div>
 
-<!-- Floating Action Buttons -->
+<!-- Floating Action Buttons: ALL EDIT & DOWNLOAD BUTTONS LOCKED FOR PRO -->
 <div id="floatingButtonsContainer" class="fixed bottom-6 left-0 right-0 z-[110] px-3 hidden">
   <div class="bg-emerald-50/95 backdrop-blur-md p-2.5 rounded-[2.5rem] shadow-2xl max-w-lg mx-auto border border-emerald-100">
     <div class="floating-bar-wrap">
-      <button onclick="showDownloadOptions()" class="w-8 h-8 bg-gradient-to-tr from-emerald-500 to-teal-500 text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Save Image">
+      <!-- Download (LOCKED 👑) -->
+      <button onclick="requirePro(() => showDownloadOptions())" class="relative w-8 h-8 bg-gradient-to-tr from-emerald-500 to-teal-500 text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Save Image">
         <i class="fas fa-download text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
+
+      <!-- WhatsApp Share (Free Viral Engine) -->
       <button onclick="sharePoster(this)" class="w-8 h-8 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Share on WhatsApp">
         <i class="fab fa-whatsapp text-sm"></i>
       </button>
+
       <div class="w-px h-6 bg-emerald-200 mx-0.5"></div>
 
-      <!-- PRO LOCKED BUTTONS -->
+      <!-- Pro Styles (LOCKED 👑) -->
       <button onclick="requirePro(() => togglePanel('proStylePanel'))" class="relative w-8 h-8 bg-amber-100 text-amber-600 rounded-full border border-amber-200 hover:bg-amber-200 transition" title="Pro Colors & Frames">
         <i class="fas fa-palette text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
+
+      <!-- Add Quote (LOCKED 👑) -->
       <button onclick="requirePro(() => openQuotePanel())" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Add Quote">
         <i class="fas fa-quote-right text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
+
+      <!-- Watermark Remove (LOCKED 👑) -->
       <button onclick="requirePro(() => toggleWatermark())" class="relative w-8 h-8 bg-rose-100 text-rose-600 rounded-full border border-rose-200 hover:bg-rose-200 transition" title="Remove Watermark">
         <i class="fas fa-tint-slash text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- FREE BUTTONS -->
-      <button onclick="togglePanel('fontListPanel')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Fonts">
+      <!-- Typography Fonts (LOCKED 👑) -->
+      <button onclick="requirePro(() => togglePanel('fontListPanel'))" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Fonts">
         <i class="fas fa-font text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
-      <button onclick="togglePanel('alignmentPanel')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Alignment">
+
+      <!-- Alignment (LOCKED 👑) -->
+      <button onclick="requirePro(() => togglePanel('alignmentPanel'))" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Alignment">
         <i class="fas fa-arrows-alt-h text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
-      <button onclick="togglePanel('adjustmentsPanel')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Size & Darkness">
+
+      <!-- Adjustments Size & Darkness (LOCKED 👑) -->
+      <button onclick="requirePro(() => togglePanel('adjustmentsPanel'))" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Size & Darkness">
         <i class="fas fa-sliders-h text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
-      <button onclick="editSocials()" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Socials">
+
+      <!-- Socials (LOCKED 👑) -->
+      <button onclick="requirePro(() => editSocials())" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Socials">
         <i class="fas fa-users text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
-      <button onclick="changeProfileShape()" class="w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Shape">
+
+      <!-- Shape (LOCKED 👑) -->
+      <button onclick="requirePro(() => changeProfileShape())" class="relative w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Shape">
         <i class="fas fa-shapes text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
-      <button onclick="applyFilter()" class="w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Filters">
+
+      <!-- Filters (LOCKED 👑) -->
+      <button onclick="requirePro(() => applyFilter())" class="relative w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Filters">
         <i class="fas fa-wand-sparkles text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
-      <button onclick="changeProfileBackground()" class="w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Banner">
+
+      <!-- Banner Background (LOCKED 👑) -->
+      <button onclick="requirePro(() => changeProfileBackground())" class="relative w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Banner">
         <i class="fas fa-image text-xs"></i>
+        <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- Quality Selector -->
+<!-- Quality Selector (BOTH SD & 4K LOCKED 👑) -->
 <div id="qualityPopup" class="fixed inset-0 bg-emerald-900/60 backdrop-blur-sm z-[220] hidden flex items-center justify-center p-4">
   <div class="cute-card p-8 w-full max-w-xs text-center shadow-2xl border border-emerald-100">
     <h3 class="text-xl font-bold mb-6 italic text-emerald-600">Export Options ✨</h3>
     <div class="space-y-3">
-      <button onclick="downloadPoster(2, this)" class="w-full py-4 bg-emerald-50 rounded-2xl font-bold hover:bg-emerald-100 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-2">
-        Standard (SD)
+      <button onclick="requirePro(() => downloadPoster(2, this))" class="relative w-full py-4 bg-emerald-50 rounded-2xl font-bold hover:bg-emerald-100 text-emerald-600 border border-emerald-100 flex items-center justify-center gap-2">
+        Standard (SD) <span class="pro-lock-badge">👑</span>
       </button>
-      <button onclick="requirePro(() => downloadPoster(4, this))" class="w-full py-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+      <button onclick="requirePro(() => downloadPoster(4, this))" class="relative w-full py-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
         Ultra HD (4K) <span class="pro-lock-badge">👑</span>
       </button>
       <button onclick="togglePanel('qualityPopup')" class="w-full py-2 text-emerald-300 text-xs mt-4">Cancel</button>

@@ -5,6 +5,7 @@ const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
+// Ab sab kuch Pro Plan ke piche lock hai (false rakha gaya hai)
 const FREE_LAUNCH_MODE = false;
 
 let sb = null;
@@ -260,14 +261,6 @@ function updateProUI() {
   const badge = document.getElementById('navProBadge');
   const badgeText = document.getElementById('navProText');
   const planStatus = document.getElementById('authPlanStatus');
-
-  if (FREE_LAUNCH_MODE) {
-    if (badgeText) badgeText.innerText = "FREE 🎉";
-    if (badge) badge.className = "bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm flex items-center gap-1";
-    if (planStatus) planStatus.innerText = "Launch Offer: Sabhi Pro Features FREE 🎉";
-    document.querySelectorAll('.pro-lock-badge').forEach(el => el.classList.add('hidden'));
-    return;
-  }
 
   const proActive = isProUser();
   if (proActive) {
@@ -710,8 +703,10 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
           <button onclick="shareFeedItem('print-area-${index}', this)" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="fab fa-whatsapp"></i>
           </button>
-          <button onclick="downloadFeedItem('print-area-${index}', this)" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
+          <!-- Feed Download Button LOCKED FOR PRO (👑) -->
+          <button onclick="requirePro(() => downloadFeedItem('print-area-${index}', this))" class="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
             <i class="fas fa-download"></i>
+            <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
           </button>
         </div>
       </div>
