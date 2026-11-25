@@ -1,3 +1,9 @@
+---
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
 <nav id="mainNav" class="fixed top-0 left-0 right-0 bg-emerald-50/90 backdrop-blur-md z-40 px-4 py-2.5 flex justify-between items-center border-b border-emerald-100 shadow-sm hidden">
   <div class="flex items-center gap-2 cursor-pointer" onclick="filterCategory('All')">
     <div class="bg-gradient-to-tr from-emerald-500 to-teal-500 p-2 rounded-xl rotate-3 shadow-sm">
@@ -7,20 +13,26 @@
   </div>
 
   <div class="flex items-center gap-2">
+    <!-- Pro Pass Button -->
     <button id="navProBadge" onclick="openPricingModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm hover:scale-105 transition flex items-center gap-1">
       <i class="fas fa-crown text-yellow-200"></i> <span id="navProText">Get Pro</span>
     </button>
 
+    <!-- Custom Upload (Pro Locked) -->
     <button onclick="requirePro(() => document.getElementById('customPosterInput').click())" class="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm hover:bg-emerald-600 transition flex items-center gap-1">
       <i class="fas fa-plus"></i> <span class="hidden sm:inline">Apni Photo</span>
     </button>
 
-    <img id="navUserPic" class="w-9 h-9 rounded-full object-cover border-2 border-emerald-200 cursor-pointer hover:scale-110 transition z-10" onclick="toggleEditProfilePopup()" src="" />
+    <!-- Top Profile Avatar Link -->
+    <a href={`${baseUrl}profile/`} title="Open Profile Page">
+      <img id="navUserPic" class="w-9 h-9 rounded-full object-cover border-2 border-emerald-200 cursor-pointer hover:scale-110 transition z-10" src="" />
+    </a>
   </div>
 </nav>
 
 <input type="file" id="customPosterInput" accept="image/*" class="hidden" />
 
+<!-- Bottom Navigation for Mobile -->
 <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-emerald-50/95 backdrop-blur-md border-t border-emerald-100 flex justify-around items-center py-3 z-40 md:hidden">
   <button onclick="filterCategory('All')" class="flex flex-col items-center text-emerald-600">
     <i class="fas fa-home text-lg"></i><span class="text-[9px] font-bold">Home</span>
@@ -34,7 +46,8 @@
   <button onclick="openPricingModal()" class="flex flex-col items-center text-amber-600">
     <i class="fas fa-crown text-lg"></i><span class="text-[9px] font-bold">Pro Pass</span>
   </button>
-  <button onclick="toggleEditProfilePopup()" class="flex flex-col items-center text-emerald-400">
+  <!-- Bottom Nav Profile Page Link -->
+  <a href={`${baseUrl}profile/`} class="flex flex-col items-center text-emerald-500">
     <i class="fas fa-user-circle text-lg"></i><span class="text-[9px] font-bold">Profile</span>
-  </button>
+  </a>
 </nav>

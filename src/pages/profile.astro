@@ -1,0 +1,349 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title="My Profile - Posty ✨">
+  <div class="min-h-screen bg-[#f0fdf4] text-gray-800 font-quicksand pb-16">
+    <div class="max-w-md mx-auto p-4 sm:p-6">
+      
+      <!-- Top Navigation -->
+      <header class="flex items-center justify-between pb-4 border-b border-emerald-100">
+        <a href={baseUrl} class="w-9 h-9 rounded-full bg-white border border-emerald-100 shadow-sm flex items-center justify-center text-emerald-600 hover:scale-105 active:scale-95 transition">
+          <i class="fas fa-arrow-left text-sm"></i>
+        </a>
+        <h1 class="text-base font-extrabold text-emerald-900">My Profile ✨</h1>
+        <button onclick="saveUserProfile()" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md shadow-emerald-200 hover:scale-105 active:scale-95 transition">
+          Save
+        </button>
+      </header>
+
+      <!-- Profile Avatar & Details Card -->
+      <div class="cute-card p-5 mt-4 border border-emerald-100">
+        
+        <!-- Avatar Section -->
+        <div class="flex flex-col items-center mb-4">
+          <div class="relative cursor-pointer group" onclick="document.getElementById('profilePicInput').click()" title="Photo Badlein">
+            <img id="profileAvatar" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-white" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" />
+            <div class="absolute bottom-0 right-0 bg-emerald-500 text-white rounded-full p-1.5 shadow-md border-2 border-white">
+              <i class="fas fa-camera text-[10px]"></i>
+            </div>
+            <button onclick="event.stopPropagation(); initManualCrop();" class="absolute bottom-0 -left-1 bg-white text-emerald-600 shadow-md rounded-full w-7 h-7 flex items-center justify-center border border-emerald-100 hover:bg-emerald-50 transition" title="Adjust / Crop Photo">
+              <i class="fas fa-crop text-xs"></i>
+            </button>
+          </div>
+          <input type="file" id="profilePicInput" accept="image/*" class="hidden" />
+
+          <!-- Logged in Google Email & Plan Badge -->
+          <div class="text-center mt-2">
+            <span id="planBadge" class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1">
+              Free Plan
+            </span>
+            <p id="userEmailText" class="text-xs text-gray-400 font-mono">Not Logged In</p>
+          </div>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block mb-1">Your Name</label>
+            <input type="text" id="nameInput" class="w-full px-3.5 py-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 text-sm font-bold text-emerald-900 outline-none focus:ring-2 focus:ring-emerald-300 transition" placeholder="Aapka Naam" oninput="this.value = this.value.replace(/\b\w/g, c => c.toUpperCase())" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block mb-1">Profession / Kaam</label>
+              <input type="text" id="professionInput" class="w-full px-3 py-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-300 transition" placeholder="e.g. Graphic Designer" />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block mb-1">WhatsApp / Mobile</label>
+              <input type="tel" id="contactInput" class="w-full px-3 py-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-300 transition" placeholder="Mobile No." />
+            </div>
+          </div>
+
+          <!-- Follow Me Toggle -->
+          <div class="flex items-center justify-between p-2.5 bg-emerald-50/40 rounded-xl border border-emerald-100/60 mt-1">
+            <label class="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+              <i class="fas fa-users text-emerald-500"></i> Posters par 'Follow Me' dikhayein
+            </label>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="socialsToggle" class="sr-only peer" checked />
+              <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+
+          <!-- Social Handles -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="relative">
+              <i class="fab fa-instagram absolute left-3 top-3 text-emerald-400 text-xs"></i>
+              <input type="text" id="instaInput" class="w-full pl-8 pr-2 py-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 outline-none" placeholder="@insta" />
+            </div>
+            <div class="relative">
+              <i class="fab fa-twitter absolute left-3 top-3 text-emerald-400 text-xs"></i>
+              <input type="text" id="twitterInput" class="w-full pl-8 pr-2 py-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 outline-none" placeholder="@twitter" />
+            </div>
+            <div class="col-span-2 relative">
+              <i class="fab fa-facebook-f absolute left-3 top-3 text-emerald-400 text-xs"></i>
+              <input type="text" id="fbInput" class="w-full pl-8 pr-2 py-2 rounded-xl bg-emerald-50/50 border border-emerald-100 text-xs text-emerald-800 outline-none" placeholder="Facebook ID / Page" />
+            </div>
+          </div>
+        </div>
+
+        <button onclick="saveUserProfile()" class="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md shadow-emerald-200 active:scale-95 transition">
+          Profile Changes Save Karein
+        </button>
+      </div>
+
+      <!-- Referrals / Pro Upgrade Card -->
+      <div class="cute-card p-4 mt-4 border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/40">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-sm">
+              <i class="fas fa-crown"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-emerald-950">Posty Pro Pass</h3>
+              <p id="subExpiryInfo" class="text-[10px] text-gray-500">Free Account</p>
+            </div>
+          </div>
+          <a href={`${baseUrl}?openPricing=true`} class="bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm hover:scale-105 active:scale-95 transition">
+            View Pass
+          </a>
+        </div>
+      </div>
+
+      <!-- Danger & Account Actions (Bottom) -->
+      <div class="cute-card p-4 mt-4 border border-red-100 space-y-2">
+        <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-1">Account Settings</h4>
+        
+        <!-- Logout Button -->
+        <button onclick="handleLogout()" class="w-full py-2.5 px-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold flex items-center justify-between border border-gray-200 transition">
+          <span class="flex items-center gap-2">
+            <i class="fas fa-sign-out-alt text-gray-400"></i> Account se Logout Karein
+          </span>
+          <i class="fas fa-chevron-right text-[10px] text-gray-400"></i>
+        </button>
+
+        <!-- Delete Account Button -->
+        <button onclick="handleDeleteAccount()" class="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold flex items-center justify-between border border-red-200 transition">
+          <span class="flex items-center gap-2">
+            <i class="fas fa-trash-alt text-red-500"></i> Apna Account Delete Karein
+          </span>
+          <span class="text-[9px] bg-red-200 text-red-800 font-extrabold px-2 py-0.5 rounded-full">Permanent</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Image Cropper Modal -->
+  <div id="cropperModal" class="fixed inset-0 bg-black/80 z-[1100] hidden flex flex-col items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] w-full max-w-xs h-[60vh] flex flex-col shadow-2xl relative overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 flex-shrink-0 bg-white z-10 text-center">
+        <h3 class="text-emerald-600 font-bold text-sm">Adjust Photo</h3>
+      </div>
+      <div class="flex-1 bg-gray-50 relative w-full min-h-0 overflow-hidden p-6 flex items-center justify-center touch-none">
+        <img id="imageToCrop" src="" class="max-w-full max-h-full block object-contain" crossorigin="anonymous" />
+      </div>
+      <div class="p-3 border-t border-gray-100 bg-white flex-shrink-0 z-10 flex gap-2">
+        <button onclick="cancelCrop()" class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-500 font-bold text-xs">Skip</button>
+        <button onclick="performCrop()" class="flex-1 py-2 bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ baseUrl }}>
+    const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseG54YW1sc3FlenBqc2R5cmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTQ5ODIsImV4cCI6MjA1NTkzMDk4Mn0.0v7eY_5F6E5V6I0C-P0qC2V2O4C_9K1_2m3l4k5j6h7";
+
+    let sb = null;
+    let cropper = null;
+    let currentUser = null;
+
+    let userState = {
+      name: "Aesthetic Creator",
+      extra: "Poster Artist",
+      contact: "9876543210",
+      pic: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+      socials: {
+        visible: true,
+        insta: { val: "", visible: true },
+        twitter: { val: "", visible: true },
+        fb: { val: "", visible: true }
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadLocalProfile();
+
+      if (window.supabase) {
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.user) {
+          currentUser = session.user;
+          document.getElementById('userEmailText').innerText = currentUser.email || currentUser.user_metadata?.full_name || 'Google User';
+          fetchPlanInfo(currentUser.id);
+        }
+
+        sb.auth.onAuthStateChange((_event, session) => {
+          currentUser = session?.user || null;
+          if (currentUser) {
+            document.getElementById('userEmailText').innerText = currentUser.email || 'Google User';
+            fetchPlanInfo(currentUser.id);
+          }
+        });
+      }
+
+      document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
+    });
+
+    function loadLocalProfile() {
+      const saved = localStorage.getItem('aestheticUser');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          userState = { ...userState, ...parsed };
+        } catch (e) {}
+      }
+
+      document.getElementById('nameInput').value = userState.name || '';
+      document.getElementById('professionInput').value = userState.extra || '';
+      document.getElementById('contactInput').value = userState.contact || '';
+      document.getElementById('profileAvatar').src = userState.pic || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix';
+      
+      const soc = userState.socials || {};
+      document.getElementById('socialsToggle').checked = soc.visible !== undefined ? soc.visible : true;
+      document.getElementById('instaInput').value = soc.insta?.val || '';
+      document.getElementById('twitterInput').value = soc.twitter?.val || '';
+      document.getElementById('fbInput').value = soc.fb?.val || '';
+    }
+
+    async function fetchPlanInfo(userId) {
+      if (!sb || !userId) return;
+      const { data } = await sb.from('subscriptions').select('plan, pro_until').eq('user_id', userId).maybeSingle();
+      const badge = document.getElementById('planBadge');
+      const info = document.getElementById('subExpiryInfo');
+
+      if (data && Number(data.pro_until || 0) > Date.now()) {
+        const days = Math.ceil((Number(data.pro_until) - Date.now()) / (1000 * 60 * 60 * 24));
+        badge.innerText = `PRO PASS 👑`;
+        badge.className = "inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1 border border-amber-300";
+        info.innerText = `Active • ${days} din bache hain`;
+      } else {
+        badge.innerText = `Free Plan`;
+        badge.className = "inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1";
+        info.innerText = `Free Account (Upgrade to unlock all)`;
+      }
+    }
+
+    function saveUserProfile() {
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) {
+        alert("Kripya apna naam daalein!");
+        return;
+      }
+
+      userState.name = name;
+      userState.extra = document.getElementById('professionInput').value.trim() || "Poster Artist";
+      userState.contact = document.getElementById('contactInput').value.trim() || "";
+
+      userState.socials = {
+        visible: document.getElementById('socialsToggle').checked,
+        insta: { val: document.getElementById('instaInput').value.trim(), visible: true },
+        twitter: { val: document.getElementById('twitterInput').value.trim(), visible: true },
+        fb: { val: document.getElementById('fbInput').value.trim(), visible: true }
+      };
+
+      localStorage.setItem('aestheticUser', JSON.stringify(userState));
+      alert("✅ Profile successfully update ho gayi!");
+      window.location.href = baseUrl;
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          openCropper(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+      event.target.value = '';
+    }
+
+    function initManualCrop() {
+      openCropper(userState.pic);
+    }
+
+    function openCropper(imageSrc) {
+      const modal = document.getElementById('cropperModal');
+      const image = document.getElementById('imageToCrop');
+      if (image && modal) {
+        image.src = imageSrc;
+        modal.classList.remove('hidden');
+        if (cropper) cropper.destroy();
+        cropper = new window.Cropper(image, {
+          aspectRatio: 1, viewMode: 1, dragMode: 'move', autoCropArea: 0.8,
+          restore: false, guides: false, center: true, highlight: false,
+          cropBoxMovable: false, cropBoxResizable: false, toggleDragModeOnDblclick: false,
+          ready() { if (this.cropper) this.cropper.reset(); }
+        });
+      }
+    }
+
+    function cancelCrop() {
+      document.getElementById('cropperModal')?.classList.add('hidden');
+      if (cropper) { cropper.destroy(); cropper = null; }
+    }
+
+    function performCrop() {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+      const dataUrl = canvas.toDataURL('image/png');
+      userState.pic = dataUrl;
+      document.getElementById('profileAvatar').src = dataUrl;
+      localStorage.setItem('aestheticUser', JSON.stringify(userState));
+      document.getElementById('cropperModal')?.classList.add('hidden');
+      cropper.destroy();
+      cropper = null;
+    }
+
+    async function handleLogout() {
+      const c = confirm("Kya aap logout karna chahte hain?");
+      if (!c) return;
+
+      if (sb) await sb.auth.signOut();
+      alert("Aap logout ho chuke hain.");
+      window.location.href = baseUrl;
+    }
+
+    async function handleDeleteAccount() {
+      const c1 = confirm("⚠️ KYA AAP SACH ME APNA ACCOUNT DELETE KARNA CHAHTE HAIN?\n\nYeh action wapas nahi ho sakta. Aapka saara data permanent delete ho jayega.");
+      if (!c1) return;
+
+      const c2 = confirm("Aakhiri Baar Confirm Karein: Aapka Pro Pass aur Account sab delete ho jayega. Delete karein?");
+      if (!c2) return;
+
+      try {
+        if (sb && currentUser) {
+          // Call Supabase RPC
+          await sb.rpc('delete_user_account');
+          await sb.auth.signOut();
+        }
+      } catch (err) {
+        console.warn("Delete RPC error:", err);
+      }
+
+      // Local storage clean karein
+      localStorage.removeItem('aestheticUser');
+      localStorage.removeItem('postyFavorites');
+      localStorage.removeItem('posty_ref');
+
+      alert("Aapka account safaltapoorvak delete ho gaya hai.");
+      window.location.href = baseUrl;
+    }
+  </script>
+</Layout>
