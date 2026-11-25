@@ -30,13 +30,26 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         </button>
       </header>
 
+      <!-- GOOGLE SIGN IN CARD (Sirf Logout hone par dikhega) -->
+      <div id="loginPromptCard" class="cute-card p-5 mt-4 border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 text-center shadow-sm">
+        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6" alt="Google" />
+        </div>
+        <h2 class="text-sm font-bold text-emerald-950">Google se Login Karein</h2>
+        <p class="text-[11px] text-emerald-700/80 mb-3 mt-0.5">Apna naam, photo aur Pro Pass sync karne ke liye sign in karein.</p>
+        <button id="googleLoginBtn" type="button" class="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs font-bold text-gray-700 active:scale-95 transition cursor-pointer">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4" alt="G" />
+          <span>Continue with Google</span>
+        </button>
+      </div>
+
       <!-- Profile Avatar & Details Card -->
       <div class="cute-card p-5 mt-4 border border-emerald-100">
         
         <!-- Avatar Section -->
         <div class="flex flex-col items-center mb-4">
           <div class="relative cursor-pointer group" onclick="document.getElementById('profilePicInput').click()" title="Photo Badlein">
-            <img id="profileAvatar" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-white" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" />
+            <img id="profileAvatar" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-white" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" alt="Avatar" />
             <div class="absolute bottom-0 right-0 bg-emerald-500 text-white rounded-full p-1.5 shadow-md border-2 border-white">
               <i class="fas fa-camera text-[10px]"></i>
             </div>
@@ -48,8 +61,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
 
           <!-- Logged in Google Email & Plan Badge -->
           <div class="text-center mt-2">
-            <span id="planBadge" class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1">
-              Free Plan
+            <span id="planBadge" class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1">
+              Logged Out
             </span>
             <p id="userEmailText" class="text-xs text-gray-400 font-mono">Not Logged In</p>
           </div>
@@ -107,7 +120,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       </div>
 
       <!-- Referrals / Pro Upgrade Card -->
-      <div class="cute-card p-4 mt-4 border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/40">
+      <div id="proPassCard" class="cute-card p-4 mt-4 border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/40">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-sm">
@@ -115,7 +128,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
             </div>
             <div>
               <h3 class="text-xs font-bold text-emerald-950">Posty Pro Pass</h3>
-              <p id="subExpiryInfo" class="text-[10px] text-gray-500">Free Account</p>
+              <p id="subExpiryInfo" class="text-[10px] text-gray-500">Login to view pass</p>
             </div>
           </div>
           <a href={`${baseUrl}?openPricing=true`} class="bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm hover:scale-105 active:scale-95 transition">
@@ -124,8 +137,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         </div>
       </div>
 
-      <!-- Danger & Account Actions (Bottom Section) -->
-      <div class="cute-card p-4 mt-4 border border-red-100 space-y-3 mb-10">
+      <!-- Danger & Account Actions (Sirf Logged-In User ke liye dikhega) -->
+      <div id="accountSettingsCard" class="cute-card p-4 mt-4 border border-red-100 space-y-3 mb-10 hidden">
         <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-1">Account Settings</h4>
         
         <!-- Logout Button -->
@@ -168,15 +181,17 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseG54YW1sc3FlenBqc2R5cmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTQ5ODIsImV4cCI6MjA1NTkzMDk4Mn0.0v7eY_5F6E5V6I0C-P0qC2V2O4C_9K1_2m3l4k5j6h7";
 
+    const DEFAULT_GUEST_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
+
     let sb = null;
     let cropper = null;
     let currentUser = null;
 
     let userState = {
-      name: "Aesthetic Creator",
-      extra: "Poster Artist",
-      contact: "9876543210",
-      pic: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+      name: "",
+      extra: "",
+      contact: "",
+      pic: DEFAULT_GUEST_AVATAR,
       socials: {
         visible: true,
         insta: { val: "", visible: true },
@@ -186,30 +201,27 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
-      loadLocalProfile();
-
       // Supabase Initialization
       if (window.supabase) {
         sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         try {
           const { data: { session } } = await sb.auth.getSession();
-          if (session?.user) {
-            currentUser = session.user;
-            document.getElementById('userEmailText').innerText = currentUser.email || currentUser.user_metadata?.full_name || 'Google User';
-            fetchPlanInfo(currentUser.id);
-          }
-        } catch (e) {}
+          currentUser = session?.user || null;
+          updateAuthUI(currentUser);
+        } catch (e) {
+          updateAuthUI(null);
+        }
 
         sb.auth.onAuthStateChange((_event, session) => {
           currentUser = session?.user || null;
-          if (currentUser) {
-            document.getElementById('userEmailText').innerText = currentUser.email || 'Google User';
-            fetchPlanInfo(currentUser.id);
-          }
+          updateAuthUI(currentUser);
         });
+      } else {
+        updateAuthUI(null);
       }
 
-      // Attach direct event listeners to buttons
+      // Button listeners
+      document.getElementById('googleLoginBtn')?.addEventListener('click', handleGoogleLogin);
       document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
       document.getElementById('deleteBtn')?.addEventListener('click', handleDeleteAccount);
       document.getElementById('saveTopBtn')?.addEventListener('click', saveUserProfile);
@@ -223,7 +235,61 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
     });
 
-    function loadLocalProfile() {
+    function updateAuthUI(user) {
+      const loginCard = document.getElementById('loginPromptCard');
+      const accountSettings = document.getElementById('accountSettingsCard');
+      const emailText = document.getElementById('userEmailText');
+      const badge = document.getElementById('planBadge');
+      const subInfo = document.getElementById('subExpiryInfo');
+
+      if (user) {
+        // === LOGGED IN STATE ===
+        loginCard?.classList.add('hidden');
+        accountSettings?.classList.remove('hidden');
+
+        emailText.innerText = user.email || user.user_metadata?.full_name || 'Google User';
+        fetchPlanInfo(user.id);
+        loadUserProfile(user);
+      } else {
+        // === LOGGED OUT STATE ===
+        loginCard?.classList.remove('hidden');
+        accountSettings?.classList.add('hidden');
+
+        emailText.innerText = "Not Logged In";
+        badge.innerText = "Logged Out";
+        badge.className = "inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1";
+        if (subInfo) subInfo.innerText = "Login to activate or view Pro Pass";
+
+        // Form Fields aur Avatar Clear Karein
+        clearFormFields();
+      }
+    }
+
+    function clearFormFields() {
+      document.getElementById('nameInput').value = '';
+      document.getElementById('professionInput').value = '';
+      document.getElementById('contactInput').value = '';
+      document.getElementById('profileAvatar').src = DEFAULT_GUEST_AVATAR;
+      document.getElementById('socialsToggle').checked = true;
+      document.getElementById('instaInput').value = '';
+      document.getElementById('twitterInput').value = '';
+      document.getElementById('fbInput').value = '';
+
+      userState = {
+        name: "",
+        extra: "",
+        contact: "",
+        pic: DEFAULT_GUEST_AVATAR,
+        socials: {
+          visible: true,
+          insta: { val: "", visible: true },
+          twitter: { val: "", visible: true },
+          fb: { val: "", visible: true }
+        }
+      };
+    }
+
+    function loadUserProfile(user) {
       const saved = localStorage.getItem('aestheticUser');
       if (saved) {
         try {
@@ -232,11 +298,16 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         } catch (e) {}
       }
 
+      // Agar naam pehle se save nahi tha, toh Google account se auto-fill karein
+      const meta = user?.user_metadata || {};
+      if (!userState.name && meta.full_name) userState.name = meta.full_name;
+      if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && meta.avatar_url) userState.pic = meta.avatar_url;
+
       document.getElementById('nameInput').value = userState.name || '';
       document.getElementById('professionInput').value = userState.extra || '';
       document.getElementById('contactInput').value = userState.contact || '';
-      document.getElementById('profileAvatar').src = userState.pic || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix';
-      
+      document.getElementById('profileAvatar').src = userState.pic || DEFAULT_GUEST_AVATAR;
+
       const soc = userState.socials || {};
       document.getElementById('socialsToggle').checked = soc.visible !== undefined ? soc.visible : true;
       document.getElementById('instaInput').value = soc.insta?.val || '';
@@ -254,12 +325,26 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         const days = Math.ceil((Number(data.pro_until) - Date.now()) / (1000 * 60 * 60 * 24));
         badge.innerText = `PRO PASS 👑`;
         badge.className = "inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1 border border-amber-300";
-        info.innerText = `Active • ${days} din bache hain`;
+        if (info) info.innerText = `Active • ${days} din bache hain`;
       } else {
         badge.innerText = `Free Plan`;
         badge.className = "inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1";
-        info.innerText = `Free Account (Upgrade to unlock all)`;
+        if (info) info.innerText = `Free Account (Upgrade to unlock all)`;
       }
+    }
+
+    async function handleGoogleLogin() {
+      if (!sb) {
+        alert("Supabase initialize nahi ho paya!");
+        return;
+      }
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.href
+        }
+      });
+      if (error) alert("Google Login error: " + error.message);
     }
 
     function saveUserProfile() {
@@ -298,7 +383,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     }
 
     function initManualCrop() {
-      openCropper(userState.pic);
+      openCropper(userState.pic || DEFAULT_GUEST_AVATAR);
     }
 
     function openCropper(imageSrc) {
@@ -344,8 +429,14 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         console.warn("Logout error:", e);
       }
 
+      // Local storage clear karein taaki purane user ka naam/no. na dikhe
+      localStorage.removeItem('aestheticUser');
+      localStorage.removeItem('postyFavorites');
+      localStorage.removeItem('posty_ref');
+
+      currentUser = null;
+      updateAuthUI(null);
       alert("Aap logout ho chuke hain.");
-      window.location.href = baseUrl;
     }
 
     async function handleDeleteAccount() {
@@ -375,7 +466,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       window.location.href = baseUrl;
     }
 
-    // Explicit window bindings
+    window.handleGoogleLogin = handleGoogleLogin;
     window.handleLogout = handleLogout;
     window.handleDeleteAccount = handleDeleteAccount;
     window.saveUserProfile = saveUserProfile;
