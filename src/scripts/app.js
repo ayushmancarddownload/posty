@@ -5,7 +5,6 @@ const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
-// 1-3 mahine sab kuch free rakhna ho toh true karein; Pro/Payment/Referral chalu rakhne ke liye false rakhein
 const FREE_LAUNCH_MODE = false;
 
 let sb = null;
@@ -20,6 +19,7 @@ let activeEditId = null;
 let allPosters = [];
 let activeCategory = 'All';
 let favoriteUrls = JSON.parse(localStorage.getItem('postyFavorites') || '[]');
+let pendingShareFile = null;
 
 let user = {
   name: "Aesthetic Creator",
@@ -456,7 +456,7 @@ function hideModalUI() {
   document.getElementById('modal')?.classList.add('hidden');
   document.getElementById('floatingButtonsContainer')?.classList.add('hidden');
   document.getElementById('bottom-nav')?.classList.remove('hidden');
-  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel', 'cropperModal'].forEach(p => {
+  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel', 'cropperModal', 'shareReadyModal'].forEach(p => {
     document.getElementById(p)?.classList.add('hidden');
   });
 }
@@ -685,7 +685,7 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
         <div class="poster-overlay-container ${theme}" style="background: linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${bg}');">
           <div class="profile-group">
             <div class="profile-pic-container shrink-0">
-              <img src="${user.pic}" class="w-14 h-14 rounded-full border-2 border-white/60 shadow-lg object-cover bg-white">
+              <img src="${user.pic}" crossorigin="anonymous" class="w-14 h-14 rounded-full border-2 border-white/60 shadow-lg object-cover bg-white">
             </div>
             <div class="profile-text flex flex-col justify-center ${fontClass || ''}">
               <h3 class="modal-profile-name font-bold text-lg leading-none drop-shadow-md mb-1">${user.name}</h3>
@@ -744,6 +744,62 @@ async function downloadFeedItem(containerId, btn) {
   }
 }
 
+// === FAST WHATSAPP SHARING LOGIC ===
+function openShareReadyModal(file) {
+  pendingShareFile = file;
+  document.getElementById('shareReadyModal')?.classList.remove('hidden');
+}
+
+function closeShareReadyModal() {
+  pendingShareFile = null;
+  document.getElementById('shareReadyModal')?.classList.add('hidden');
+}
+
+async function triggerPendingShare() {
+  if (!pendingShareFile) return;
+  const file = pendingShareFile;
+  closeShareReadyModal();
+  try {
+    await navigator.share({
+      files: [file],
+      title: 'Apne naam aur photo ke sath poster banayein!',
+      text: 'Banayein apna poster: https://postbnao.com/posty/'
+    });
+  } catch (err) {
+    if (err?.name !== 'AbortError') alert("Share cancelled ya browser supported nahi hai.");
+  }
+}
+
+async function handleShareCanvas(canvas) {
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (!blob) throw new Error('Image generate nahi ho payi');
+
+  const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
+
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Apne naam aur photo ke sath poster banayein!',
+        text: 'Banayein apna poster: https://postbnao.com/posty/'
+      });
+    } catch (shareErr) {
+      if (shareErr?.name === 'AbortError') return;
+      if (shareErr?.name === 'NotAllowedError') {
+        openShareReadyModal(file);
+        return;
+      }
+      throw shareErr;
+    }
+  } else {
+    const link = document.createElement('a');
+    link.download = `postbnao-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+    alert("Is browser par direct share support nahi hai, image download ho gayi hai!");
+  }
+}
+
 async function shareFeedItem(containerId, btn) {
   const captureTarget = document.getElementById(containerId);
   if (!captureTarget) return;
@@ -760,7 +816,12 @@ async function shareFeedItem(containerId, btn) {
       scale: 1.5,
       useCORS: true,
       allowTaint: false,
+      imageTimeout: 5000,
       backgroundColor: null,
+      ignoreElements: (el) =>
+        (el.classList?.contains('gallery-item') && !el.contains(captureTarget)) ||
+        el.classList?.contains('capture-hide') ||
+        ['modal', 'pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
       onclone: (clonedDoc) => {
         const el = clonedDoc.getElementById(containerId);
         if (el) {
@@ -771,28 +832,56 @@ async function shareFeedItem(containerId, btn) {
       }
     });
 
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) throw new Error('Image generate nahi ho payi');
-
-    const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      await navigator.share({
-        files: [file],
-        title: 'Apne naam aur photo ke sath poster banayein!',
-        text: 'Banayein apna poster: https://postbnao.com/posty/'
-      });
-    } else {
-      const link = document.createElement('a');
-      link.download = `postbnao-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-      alert("Image save ho gayi hai! Ab aap ise WhatsApp par share kar sakte hain.");
-    }
+    await handleShareCanvas(canvas);
   } catch (err) {
-    if (err?.name !== 'AbortError') {
-      console.error('Share error:', err);
-      alert("Share karne me samasya aayi. Kripya Download button try karein.");
+    console.error('Share error:', err);
+    alert("Share karne me samasya aayi. Kripya Download button try karein.");
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      btn.classList.remove('opacity-75', 'cursor-wait');
     }
+  }
+}
+
+async function sharePoster(btn) {
+  const captureArea = document.getElementById('captureArea');
+  if (!captureArea) return;
+
+  const originalIcon = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner animate-spin text-xs"></i>';
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-wait');
+  }
+
+  try {
+    const canvas = await window.html2canvas(captureArea, {
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: false,
+      imageTimeout: 5000,
+      backgroundColor: null,
+      ignoreElements: (el) =>
+        el.id === 'mainContent' ||
+        el.classList?.contains('capture-hide') ||
+        ['pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
+      onclone: (clonedDoc) => {
+        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
+        const captureDiv = clonedDoc.getElementById('captureArea');
+        if (captureDiv) {
+          captureDiv.style.border = 'none';
+          captureDiv.style.boxShadow = 'none';
+          captureDiv.style.borderRadius = '0';
+        }
+      }
+    });
+
+    await handleShareCanvas(canvas);
+  } catch (err) {
+    console.error('Share error:', err);
+    alert("Share karne me samasya aayi. Kripya Download button try karein.");
   } finally {
     if (btn) {
       btn.innerHTML = originalIcon;
@@ -1039,65 +1128,6 @@ function changeProfileBackground() {
   overlay.style.backgroundPosition = 'center';
 }
 
-async function sharePoster(btn) {
-  const captureArea = document.getElementById('captureArea');
-  if (!captureArea) return;
-
-  const originalIcon = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.innerHTML = '<i class="fas fa-spinner animate-spin text-xs"></i>';
-    btn.disabled = true;
-    btn.classList.add('opacity-75', 'cursor-wait');
-  }
-
-  try {
-    const canvas = await window.html2canvas(captureArea, {
-      scale: 1.5,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
-      onclone: (clonedDoc) => {
-        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
-        const captureDiv = clonedDoc.getElementById('captureArea');
-        if (captureDiv) {
-          captureDiv.style.border = 'none';
-          captureDiv.style.boxShadow = 'none';
-          captureDiv.style.borderRadius = '0';
-        }
-      }
-    });
-
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) throw new Error('Image generate nahi ho payi');
-
-    const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      await navigator.share({
-        files: [file],
-        title: 'Look at my Poster! ✨',
-        text: 'Apni photo ke sath poster banayein: https://postbnao.com/posty/'
-      });
-    } else {
-      const link = document.createElement('a');
-      link.download = `postbnao-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-      alert("Image save ho gayi hai! Ab aap ise WhatsApp par share kar sakte hain.");
-    }
-  } catch (err) {
-    if (err?.name !== 'AbortError') {
-      console.error('Share error:', err);
-      alert("Share karne me samasya aayi. Kripya Download button try karein.");
-    }
-  } finally {
-    if (btn) {
-      btn.innerHTML = originalIcon;
-      btn.disabled = false;
-      btn.classList.remove('opacity-75', 'cursor-wait');
-    }
-  }
-}
-
 async function downloadPoster(scale, btn) {
   const originalText = btn.innerHTML;
   const originalClass = btn.className;
@@ -1174,5 +1204,6 @@ Object.assign(window, {
   shareFeedItem, downloadFeedItem, filterCategory, toggleFavorite,
   setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote,
   isProUser, requirePro, loginWithGoogle, logoutGoogle, openPricingModal,
-  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark, shareReferralOnWhatsApp
+  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark, shareReferralOnWhatsApp,
+  triggerPendingShare, closeShareReadyModal
 });
