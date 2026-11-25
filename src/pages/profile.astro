@@ -36,10 +36,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6" alt="Google" />
         </div>
         <h2 class="text-sm font-bold text-emerald-950">Google se Login Karein</h2>
-        <p class="text-[11px] text-emerald-700/80 mb-3 mt-0.5">Apna naam, photo aur Pro Pass sync karne ke liye sign in karein.</p>
+        <p class="text-[11px] text-emerald-700/80 mb-3 mt-0.5">Apna naam, photo aur Mobile No cloud par save rakhne ke liye login karein.</p>
         <button id="googleLoginBtn" type="button" class="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs font-bold text-gray-700 active:scale-95 transition cursor-pointer">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4" alt="G" />
-          <span>Continue with Google</span>
+          <span id="googleLoginBtnText">Continue with Google</span>
         </button>
       </div>
 
@@ -114,8 +114,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
           </div>
         </div>
 
-        <button id="saveCardBtn" class="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md shadow-emerald-200 active:scale-95 transition">
-          Profile Changes Save Karein
+        <button id="saveCardBtn" class="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md shadow-emerald-200 active:scale-95 transition flex items-center justify-center gap-1.5">
+          <i class="fas fa-check"></i> <span>Profile Changes Save Karein</span>
         </button>
       </div>
 
@@ -180,7 +180,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
   <script is:inline define:vars={{ baseUrl }}>
     const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseG54YW1sc3FlenBqc2R5cmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTQ5ODIsImV4cCI6MjA1NTkzMDk4Mn0.0v7eY_5F6E5V6I0C-P0qC2V2O4C_9K1_2m3l4k5j6h7";
-
     const DEFAULT_GUEST_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
 
     let sb = null;
@@ -201,7 +200,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Supabase Initialization
+      // 1. Supabase Initialization
       if (window.supabase) {
         sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         try {
@@ -220,7 +219,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         updateAuthUI(null);
       }
 
-      // Button listeners
+      // 2. Button listeners
       document.getElementById('googleLoginBtn')?.addEventListener('click', handleGoogleLogin);
       document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
       document.getElementById('deleteBtn')?.addEventListener('click', handleDeleteAccount);
@@ -247,7 +246,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         loginCard?.classList.add('hidden');
         accountSettings?.classList.remove('hidden');
 
-        emailText.innerText = user.email || user.user_metadata?.full_name || 'Google User';
+        emailText.innerText = user.email || user.user_metadata?.full_name || user.user_metadata?.name || 'Google User';
         fetchPlanInfo(user.id);
         loadUserProfile(user);
       } else {
@@ -260,7 +259,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         badge.className = "inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1";
         if (subInfo) subInfo.innerText = "Login to activate or view Pro Pass";
 
-        // Form Fields aur Avatar Clear Karein
         clearFormFields();
       }
     }
@@ -290,6 +288,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     }
 
     function loadUserProfile(user) {
+      const meta = user?.user_metadata || {};
+      
+      // 1. Pehle local storage check karein
       const saved = localStorage.getItem('aestheticUser');
       if (saved) {
         try {
@@ -298,11 +299,21 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         } catch (e) {}
       }
 
-      // Agar naam pehle se save nahi tha, toh Google account se auto-fill karein
-      const meta = user?.user_metadata || {};
-      if (!userState.name && meta.full_name) userState.name = meta.full_name;
-      if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && meta.avatar_url) userState.pic = meta.avatar_url;
+      // 2. Google OAuth & Cloud Metadata se saari possible keys check karein
+      const cloudName = meta.custom_name || meta.full_name || meta.name || '';
+      const cloudPic = meta.custom_pic || meta.avatar_url || meta.picture || '';
+      const cloudExtra = meta.custom_extra || meta.profession || '';
+      const cloudContact = meta.custom_contact || meta.phone || '';
+      const cloudSocials = meta.custom_socials || null;
 
+      // Agar local me naam/photo nahi hai toh Google/Cloud data lein
+      if (!userState.name && cloudName) userState.name = cloudName;
+      if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && cloudPic) userState.pic = cloudPic;
+      if (!userState.extra && cloudExtra) userState.extra = cloudExtra;
+      if (!userState.contact && cloudContact) userState.contact = cloudContact;
+      if (cloudSocials && typeof cloudSocials === 'object') userState.socials = { ...userState.socials, ...cloudSocials };
+
+      // 3. Form fields me data show karein
       document.getElementById('nameInput').value = userState.name || '';
       document.getElementById('professionInput').value = userState.extra || '';
       document.getElementById('contactInput').value = userState.contact || '';
@@ -313,6 +324,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       document.getElementById('instaInput').value = soc.insta?.val || '';
       document.getElementById('twitterInput').value = soc.twitter?.val || '';
       document.getElementById('fbInput').value = soc.fb?.val || '';
+
+      // Local storage ko bhi sync kar dein taaki poster editor me bhi turant dikhe
+      localStorage.setItem('aestheticUser', JSON.stringify(userState));
     }
 
     async function fetchPlanInfo(userId) {
@@ -338,16 +352,22 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         alert("Supabase initialize nahi ho paya!");
         return;
       }
+      const btnText = document.getElementById('googleLoginBtnText');
+      if (btnText) btnText.innerText = "Connecting to Google...";
+
       const { error } = await sb.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.href
         }
       });
-      if (error) alert("Google Login error: " + error.message);
+      if (error) {
+        alert("Google Login error: " + error.message);
+        if (btnText) btnText.innerText = "Continue with Google";
+      }
     }
 
-    function saveUserProfile() {
+    async function saveUserProfile() {
       const name = document.getElementById('nameInput').value.trim();
       if (!name) {
         alert("Kripya apna naam daalein!");
@@ -365,8 +385,27 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         fb: { val: document.getElementById('fbInput').value.trim(), visible: true }
       };
 
+      // 1. Local storage me save karein
       localStorage.setItem('aestheticUser', JSON.stringify(userState));
-      alert("✅ Profile successfully update ho gayi!");
+
+      // 2. Agar user login hai toh Supabase CLOUD me permanently save karein!
+      if (sb && currentUser) {
+        try {
+          await sb.auth.updateUser({
+            data: {
+              custom_name: userState.name,
+              custom_extra: userState.extra,
+              custom_contact: userState.contact,
+              custom_pic: userState.pic,
+              custom_socials: userState.socials
+            }
+          });
+        } catch (err) {
+          console.warn("Cloud sync error:", err);
+        }
+      }
+
+      alert("✅ Profile changes safaltapoorvak save ho gaye!");
       window.location.href = baseUrl;
     }
 
@@ -429,7 +468,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         console.warn("Logout error:", e);
       }
 
-      // Local storage clear karein taaki purane user ka naam/no. na dikhe
+      // Local storage clear karein
       localStorage.removeItem('aestheticUser');
       localStorage.removeItem('postyFavorites');
       localStorage.removeItem('posty_ref');
