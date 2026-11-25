@@ -178,8 +178,11 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
   </div>
 
   <script is:inline define:vars={{ baseUrl }}>
+    // ⚠️ APNI APP.JS KI WORKING KEYS YAHAN DALEIN:
     const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseG54YW1sc3FlenBqc2R5cmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTQ5ODIsImV4cCI6MjA1NTkzMDk4Mn0.0v7eY_5F6E5V6I0C-P0qC2V2O4C_9K1_2m3l4k5j6h7";
+const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK"; 
+    // ^ Agar aapne app.js me koi alag key dali hai, toh wahi key yahan paste karein!
+
     const DEFAULT_GUEST_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
 
     let sb = null;
@@ -219,7 +222,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         updateAuthUI(null);
       }
 
-      // 2. Button listeners
+      // 2. Button Listeners
       document.getElementById('googleLoginBtn')?.addEventListener('click', handleGoogleLogin);
       document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
       document.getElementById('deleteBtn')?.addEventListener('click', handleDeleteAccount);
@@ -242,7 +245,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       const subInfo = document.getElementById('subExpiryInfo');
 
       if (user) {
-        // === LOGGED IN STATE ===
+        // === LOGGED IN ===
         loginCard?.classList.add('hidden');
         accountSettings?.classList.remove('hidden');
 
@@ -250,7 +253,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         fetchPlanInfo(user.id);
         loadUserProfile(user);
       } else {
-        // === LOGGED OUT STATE ===
+        // === LOGGED OUT ===
         loginCard?.classList.remove('hidden');
         accountSettings?.classList.add('hidden');
 
@@ -290,7 +293,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     function loadUserProfile(user) {
       const meta = user?.user_metadata || {};
       
-      // 1. Pehle local storage check karein
+      // 1. Local Storage Data
       const saved = localStorage.getItem('aestheticUser');
       if (saved) {
         try {
@@ -299,21 +302,21 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         } catch (e) {}
       }
 
-      // 2. Google OAuth & Cloud Metadata se saari possible keys check karein
-      const cloudName = meta.custom_name || meta.full_name || meta.name || '';
-      const cloudPic = meta.custom_pic || meta.avatar_url || meta.picture || '';
-      const cloudExtra = meta.custom_extra || meta.profession || '';
-      const cloudContact = meta.custom_contact || meta.phone || '';
-      const cloudSocials = meta.custom_socials || null;
+      // 2. Google OAuth se aane wali saari possible keys check karein!
+      const googleName = meta.custom_name || meta.full_name || meta.name || user.email?.split('@')[0] || '';
+      const googlePic = meta.custom_pic || meta.avatar_url || meta.picture || '';
+      const googleExtra = meta.custom_extra || meta.profession || '';
+      const googleContact = meta.custom_contact || meta.phone || '';
+      const googleSocials = meta.custom_socials || null;
 
-      // Agar local me naam/photo nahi hai toh Google/Cloud data lein
-      if (!userState.name && cloudName) userState.name = cloudName;
-      if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && cloudPic) userState.pic = cloudPic;
-      if (!userState.extra && cloudExtra) userState.extra = cloudExtra;
-      if (!userState.contact && cloudContact) userState.contact = cloudContact;
-      if (cloudSocials && typeof cloudSocials === 'object') userState.socials = { ...userState.socials, ...cloudSocials };
+      // Agar local me naam/photo nahi hai toh Google account se lein
+      if (!userState.name && googleName) userState.name = googleName;
+      if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && googlePic) userState.pic = googlePic;
+      if (!userState.extra && googleExtra) userState.extra = googleExtra;
+      if (!userState.contact && googleContact) userState.contact = googleContact;
+      if (googleSocials && typeof googleSocials === 'object') userState.socials = { ...userState.socials, ...googleSocials };
 
-      // 3. Form fields me data show karein
+      // 3. Form me show karein
       document.getElementById('nameInput').value = userState.name || '';
       document.getElementById('professionInput').value = userState.extra || '';
       document.getElementById('contactInput').value = userState.contact || '';
@@ -325,8 +328,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       document.getElementById('twitterInput').value = soc.twitter?.val || '';
       document.getElementById('fbInput').value = soc.fb?.val || '';
 
-      // Local storage ko bhi sync kar dein taaki poster editor me bhi turant dikhe
-      localStorage.setItem('aestheticUser', JSON.stringify(userState));
+      // Local storage sync karein taaki posters me bhi naam aa jaye
+      if (userState.name || userState.pic !== DEFAULT_GUEST_AVATAR) {
+        localStorage.setItem('aestheticUser', JSON.stringify(userState));
+      }
     }
 
     async function fetchPlanInfo(userId) {
@@ -347,6 +352,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       }
     }
 
+    // Google Login Function (Wahi same redirect jo Get Pro me chalta hai!)
     async function handleGoogleLogin() {
       if (!sb) {
         alert("Supabase initialize nahi ho paya!");
@@ -355,10 +361,13 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       const btnText = document.getElementById('googleLoginBtnText');
       if (btnText) btnText.innerText = "Connecting to Google...";
 
+      // Wahi working redirect URL jo app.js me hai
+      const redirectUrl = `${window.location.origin}${baseUrl}`;
+
       const { error } = await sb.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.href
+          redirectTo: redirectUrl
         }
       });
       if (error) {
@@ -385,10 +394,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         fb: { val: document.getElementById('fbInput').value.trim(), visible: true }
       };
 
-      // 1. Local storage me save karein
+      // 1. Local Storage me save karein
       localStorage.setItem('aestheticUser', JSON.stringify(userState));
 
-      // 2. Agar user login hai toh Supabase CLOUD me permanently save karein!
+      // 2. Supabase Cloud Account me permanently save karein!
       if (sb && currentUser) {
         try {
           await sb.auth.updateUser({
@@ -401,7 +410,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
             }
           });
         } catch (err) {
-          console.warn("Cloud sync error:", err);
+          console.warn("Cloud save error:", err);
         }
       }
 
@@ -468,7 +477,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         console.warn("Logout error:", e);
       }
 
-      // Local storage clear karein
       localStorage.removeItem('aestheticUser');
       localStorage.removeItem('postyFavorites');
       localStorage.removeItem('posty_ref');
