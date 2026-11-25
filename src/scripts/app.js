@@ -1,9 +1,12 @@
 import { SITE_LOGO_URL, FEED_OPACITY_BOTTOM, FEED_OPACITY_TOP, MY_GALLERY_IMAGES } from '../data/posters.js';
 
-// === 1. APNA SUPABASE URL & ANON KEY YAHAN PASTE KAREIN ===
-const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
+// === 1. APNA SUPABASE URL & ANON KEY YAHAN DALEIN ===
+const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY";
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+
+// 1-3 mahine sab kuch free rakhna ho toh true karein; Pro/Payment/Referral chalu rakhne ke liye false rakhein
+const FREE_LAUNCH_MODE = false;
 
 let sb = null;
 let currentAuthUser = null;
@@ -59,7 +62,10 @@ if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")
     updateAuthUI();
 
     if (currentAuthUser) {
+      await claimPendingReferral(currentAuthUser.id);
       await fetchUserSubscription(currentAuthUser.id);
+      await fetchReferralCount(currentAuthUser.id);
+
       if (!localStorage.getItem('aestheticUser')) {
         const meta = currentAuthUser.user_metadata || {};
         if (meta.full_name) {
@@ -77,6 +83,7 @@ if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  captureReferralParam();
   setupPWA();
   checkInstamojoReturn();
 
@@ -110,6 +117,69 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFeed();
 });
 
+// === REFERRAL SYSTEM ===
+function captureReferralParam() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref && ref.length > 10) {
+    localStorage.setItem('posty_ref', ref);
+    if (!params.get('payment_id')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+}
+
+async function claimPendingReferral(myUid) {
+  const referrerId = localStorage.getItem('posty_ref');
+  if (!referrerId || referrerId === myUid) {
+    localStorage.removeItem('posty_ref');
+    return;
+  }
+
+  try {
+    await fetch(`${FUNCTIONS_URL}/record-referral`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ referrer_id: referrerId, referred_user_id: myUid })
+    });
+  } catch (e) {
+    console.error('Referral error:', e);
+  } finally {
+    localStorage.removeItem('posty_ref');
+  }
+}
+
+async function fetchReferralCount(myUid) {
+  if (!sb || !myUid) return;
+  const { count } = await sb
+    .from('referrals')
+    .select('*', { count: 'exact', head: true })
+    .eq('referrer_id', myUid);
+
+  const total = count || 0;
+  const textEl = document.getElementById('refCountText');
+  const barEl = document.getElementById('refProgressBar');
+  if (textEl) textEl.innerText = `${Math.min(total, 10)} / 10`;
+  if (barEl) barEl.style.width = `${Math.min(100, (total / 10) * 100)}%`;
+}
+
+async function shareReferralOnWhatsApp() {
+  if (!currentAuthUser) {
+    await loginWithGoogle();
+    return;
+  }
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  const refLink = `${window.location.origin}${baseUrl}?ref=${currentAuthUser.id}`;
+  const msg = `Apni photo aur naam wala Good Morning, Bhakti & Festival Poster 5 second me FREE banayein! 👇✨\n\n${refLink}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 // === AUTH & SUBSCRIPTION ===
 async function fetchUserSubscription(userId) {
   if (!sb || !userId) return;
@@ -128,6 +198,7 @@ async function fetchUserSubscription(userId) {
 }
 
 function isProUser() {
+  if (FREE_LAUNCH_MODE) return true;
   return Boolean(currentAuthUser && userSubscription.proUntil > Date.now());
 }
 
@@ -186,11 +257,19 @@ function updateAuthUI() {
 }
 
 function updateProUI() {
-  const proActive = isProUser();
   const badge = document.getElementById('navProBadge');
   const badgeText = document.getElementById('navProText');
   const planStatus = document.getElementById('authPlanStatus');
 
+  if (FREE_LAUNCH_MODE) {
+    if (badgeText) badgeText.innerText = "FREE 🎉";
+    if (badge) badge.className = "bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm flex items-center gap-1";
+    if (planStatus) planStatus.innerText = "Launch Offer: Sabhi Pro Features FREE 🎉";
+    document.querySelectorAll('.pro-lock-badge').forEach(el => el.classList.add('hidden'));
+    return;
+  }
+
+  const proActive = isProUser();
   if (proActive) {
     const daysLeft = Math.max(1, Math.ceil((userSubscription.proUntil - Date.now()) / (1000 * 60 * 60 * 24)));
     if (badgeText) badgeText.innerText = `PRO (${daysLeft}d)`;
@@ -210,6 +289,7 @@ function updateProUI() {
 function openPricingModal() {
   updateAuthUI();
   updateProUI();
+  if (currentAuthUser) fetchReferralCount(currentAuthUser.id);
   document.getElementById('pricingModal')?.classList.remove('hidden');
 }
 
@@ -627,7 +707,7 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
           <button onclick="toggleFavorite('${url}', this)" class="${isFav ? 'text-rose-500 bg-rose-50' : 'text-emerald-600 bg-emerald-50'} p-2 rounded-full transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
           </button>
-          <button onclick="shareFeedItem('print-area-${index}')" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
+          <button onclick="shareFeedItem('print-area-${index}', this)" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="fab fa-whatsapp"></i>
           </button>
           <button onclick="downloadFeedItem('print-area-${index}', this)" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
@@ -643,6 +723,7 @@ async function downloadFeedItem(containerId, btn) {
   const captureTarget = document.getElementById(containerId);
   const originalIcon = btn.innerHTML;
   btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
+  btn.disabled = true;
   try {
     const canvas = await window.html2canvas(captureTarget, {
       scale: 3, useCORS: true, allowTaint: false, backgroundColor: null,
@@ -659,22 +740,66 @@ async function downloadFeedItem(containerId, btn) {
     alert("Could not download image. Try opening editor.");
   } finally {
     btn.innerHTML = originalIcon;
+    btn.disabled = false;
   }
 }
 
-async function shareFeedItem(containerId) {
+async function shareFeedItem(containerId, btn) {
   const captureTarget = document.getElementById(containerId);
+  if (!captureTarget) return;
+
+  const originalIcon = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-wait');
+  }
+
   try {
-    const canvas = await window.html2canvas(captureTarget, { scale: 2, useCORS: true });
-    canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
-      if (navigator.share) {
-        await navigator.share({ files: [file], title: 'Apne naam aur photo ke sath poster banayein!', text: 'Banayein apna poster: https://postbnao.com/posty/' });
-      } else {
-        alert("WhatsApp direct file share mobile browser par chalta hai — aap Download button se image save karke share kar sakte hain!");
+    const canvas = await window.html2canvas(captureTarget, {
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      onclone: (clonedDoc) => {
+        const el = clonedDoc.getElementById(containerId);
+        if (el) {
+          el.style.borderRadius = '0';
+          el.style.border = 'none';
+          el.style.boxShadow = 'none';
+        }
       }
     });
-  } catch (err) {}
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Image generate nahi ho payi');
+
+    const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      await navigator.share({
+        files: [file],
+        title: 'Apne naam aur photo ke sath poster banayein!',
+        text: 'Banayein apna poster: https://postbnao.com/posty/'
+      });
+    } else {
+      const link = document.createElement('a');
+      link.download = `postbnao-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+      alert("Image save ho gayi hai! Ab aap ise WhatsApp par share kar sakte hain.");
+    }
+  } catch (err) {
+    if (err?.name !== 'AbortError') {
+      console.error('Share error:', err);
+      alert("Share karne me samasya aayi. Kripya Download button try karein.");
+    }
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      btn.classList.remove('opacity-75', 'cursor-wait');
+    }
+  }
 }
 
 function adjustNameSize() {
@@ -914,19 +1039,63 @@ function changeProfileBackground() {
   overlay.style.backgroundPosition = 'center';
 }
 
-async function sharePoster() {
+async function sharePoster(btn) {
   const captureArea = document.getElementById('captureArea');
+  if (!captureArea) return;
+
+  const originalIcon = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner animate-spin text-xs"></i>';
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-wait');
+  }
+
   try {
     const canvas = await window.html2canvas(captureArea, {
-      scale: 2, useCORS: true, backgroundColor: null,
-      onclone: (clonedDoc) => clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none')
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      onclone: (clonedDoc) => {
+        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
+        const captureDiv = clonedDoc.getElementById('captureArea');
+        if (captureDiv) {
+          captureDiv.style.border = 'none';
+          captureDiv.style.boxShadow = 'none';
+          captureDiv.style.borderRadius = '0';
+        }
+      }
     });
-    canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
-      if (navigator.share) await navigator.share({ files: [file], title: 'Look at my Poster! ✨' });
-      else alert("Mobile browser par WhatsApp direct share chalta hai — aap Download karke share karein!");
-    });
-  } catch (err) {}
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Image generate nahi ho payi');
+
+    const file = new File([blob], 'postbnao-poster.png', { type: 'image/png' });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      await navigator.share({
+        files: [file],
+        title: 'Look at my Poster! ✨',
+        text: 'Apni photo ke sath poster banayein: https://postbnao.com/posty/'
+      });
+    } else {
+      const link = document.createElement('a');
+      link.download = `postbnao-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+      alert("Image save ho gayi hai! Ab aap ise WhatsApp par share kar sakte hain.");
+    }
+  } catch (err) {
+    if (err?.name !== 'AbortError') {
+      console.error('Share error:', err);
+      alert("Share karne me samasya aayi. Kripya Download button try karein.");
+    }
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      btn.classList.remove('opacity-75', 'cursor-wait');
+    }
+  }
 }
 
 async function downloadPoster(scale, btn) {
@@ -1005,5 +1174,5 @@ Object.assign(window, {
   shareFeedItem, downloadFeedItem, filterCategory, toggleFavorite,
   setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote,
   isProUser, requirePro, loginWithGoogle, logoutGoogle, openPricingModal,
-  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark
+  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark, shareReferralOnWhatsApp
 });

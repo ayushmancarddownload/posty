@@ -217,7 +217,9 @@
   <div class="bg-emerald-50/95 backdrop-blur-md p-2.5 rounded-[2.5rem] shadow-2xl max-w-lg mx-auto border border-emerald-100">
     <div class="floating-bar-wrap">
       <button onclick="showDownloadOptions()" class="w-8 h-8 bg-gradient-to-tr from-emerald-500 to-teal-500 text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Save Image"><i class="fas fa-download text-xs"></i></button>
-      <button onclick="sharePoster()" class="w-8 h-8 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Share on WhatsApp"><i class="fab fa-whatsapp text-sm"></i></button>
+      <button onclick="sharePoster(this)" class="w-8 h-8 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Share on WhatsApp">
+        <i class="fab fa-whatsapp text-sm"></i>
+      </button>
       <div class="w-px h-6 bg-emerald-200 mx-0.5"></div>
       <button onclick="togglePanel('proStylePanel')" class="w-8 h-8 bg-amber-100 text-amber-600 rounded-full border border-amber-200 hover:bg-amber-200 transition" title="Colors, Frames & Layouts"><i class="fas fa-palette text-xs"></i></button>
       <button onclick="openQuotePanel()" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Add Quote"><i class="fas fa-quote-right text-xs"></i></button>
