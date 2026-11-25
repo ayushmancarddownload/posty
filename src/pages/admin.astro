@@ -1,0 +1,285 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Posty Admin Dashboard 👑">
+  <div class="min-h-screen bg-slate-900 text-white font-quicksand p-4 sm:p-8">
+    <div class="max-w-6xl mx-auto">
+      
+      <!-- Top Header -->
+      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="bg-gradient-to-r from-amber-500 to-rose-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Super Admin</span>
+            <h1 class="text-2xl font-extrabold text-white">Posty Control Center 👑</h1>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Manage users, subscriptions, and instant Pro plan activations.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="../" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+            <i class="fas fa-arrow-left"></i> Main Site
+          </a>
+          <button id="adminAuthBtn" onclick="handleAdminAuth()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg">
+            Login as Admin
+          </button>
+        </div>
+      </header>
+
+      <!-- Access Denied / Login Screen (Agar admin login na ho) -->
+      <div id="unauthorizedScreen" class="py-20 text-center">
+        <div class="w-16 h-16 bg-slate-800 border border-slate-700 rounded-3xl flex items-center justify-center mx-auto mb-4 text-amber-400 text-2xl shadow-xl">
+          <i class="fas fa-lock"></i>
+        </div>
+        <h2 class="text-lg font-bold text-white mb-1">Admin Access Required</h2>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto mb-6">Kripya apne Admin Google Account (<b class="text-emerald-400">nirajsidar97@gmail.com</b>) se sign in karein.</p>
+        <button onclick="loginWithGoogleAdmin()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold px-6 py-3 rounded-2xl text-xs shadow-xl inline-flex items-center gap-2 transition active:scale-95">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4" /> Sign in with Google
+        </button>
+      </div>
+
+      <!-- Admin Main Content (Login hone par dikhega) -->
+      <main id="adminMainContent" class="hidden mt-6 space-y-6">
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Users</p>
+            <h3 id="statTotalUsers" class="text-3xl font-extrabold text-white mt-1">0</h3>
+            <span class="text-[10px] text-emerald-400 mt-1 inline-block">Registered via Google</span>
+          </div>
+
+          <div class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 shadow-lg">
+            <p class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+              Active Pro Users 👑
+            </p>
+            <h3 id="statActivePro" class="text-3xl font-extrabold text-amber-300 mt-1">0</h3>
+            <span class="text-[10px] text-amber-400/80 mt-1 inline-block">Paying / Rewarded Members</span>
+          </div>
+
+          <div class="col-span-2 sm:col-span-1 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Free Users</p>
+            <h3 id="statFreeUsers" class="text-3xl font-extrabold text-slate-300 mt-1">0</h3>
+            <span class="text-[10px] text-slate-500 mt-1 inline-block">Ready to upgrade</span>
+          </div>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-slate-800/50 p-3 rounded-2xl border border-slate-800">
+          <div class="relative w-full sm:w-80">
+            <i class="fas fa-search absolute left-3 top-3 text-slate-500 text-xs"></i>
+            <input type="text" id="userSearchInput" oninput="filterUsersList()" placeholder="Search user email or name..." class="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500 transition" />
+          </div>
+          <button onclick="fetchAdminData()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-700">
+            <i class="fas fa-sync-alt" id="refreshIcon"></i> Refresh Data
+          </button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-slate-800/60 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-800 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                <tr>
+                  <th class="py-3 px-4">User</th>
+                  <th class="py-3 px-4">Current Status</th>
+                  <th class="py-3 px-4">Plan / Validity</th>
+                  <th class="py-3 px-4 text-right">Quick Pro Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody" class="divide-y divide-slate-800">
+                <tr>
+                  <td colspan="4" class="text-center py-10 text-slate-500">Loading users...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script is:inline>
+    const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseG54YW1sc3FlenBqc2R5cmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTQ5ODIsImV4cCI6MjA1NTkzMDk4Mn0.0v7eY_5F6E5V6I0C-P0qC2V2O4C_9K1_2m3l4k5j6h7"; // Aapka Anon Key
+    const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+    const ADMIN_EMAIL = "nirajsidar97@gmail.com";
+
+    let sb = null;
+    let adminSession = null;
+    let allUsersData = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.supabase) {
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        sb.auth.onAuthStateChange((_event, session) => {
+          adminSession = session;
+          checkAdminAccess();
+        });
+      }
+    });
+
+    async function checkAdminAccess() {
+      const user = adminSession?.user;
+      const unauthorized = document.getElementById('unauthorizedScreen');
+      const mainContent = document.getElementById('adminMainContent');
+      const authBtn = document.getElementById('adminAuthBtn');
+
+      if (user && user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        unauthorized.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        authBtn.innerText = "Logout Admin";
+        authBtn.className = "bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg";
+        fetchAdminData();
+      } else {
+        unauthorized.classList.remove('hidden');
+        mainContent.classList.add('hidden');
+        authBtn.innerText = "Login as Admin";
+        authBtn.className = "bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg";
+      }
+    }
+
+    async function handleAdminAuth() {
+      if (adminSession?.user) {
+        await sb.auth.signOut();
+        window.location.reload();
+      } else {
+        loginWithGoogleAdmin();
+      }
+    }
+
+    async function loginWithGoogleAdmin() {
+      if (!sb) return;
+      await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href }
+      });
+    }
+
+    async function fetchAdminData() {
+      if (!adminSession) return;
+      const refIcon = document.getElementById('refreshIcon');
+      refIcon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch(`${FUNCTIONS_URL}/admin-manage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminSession.access_token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ action: 'get-users' })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        allUsersData = data.users || [];
+
+        document.getElementById('statTotalUsers').innerText = data.stats.totalUsers;
+        document.getElementById('statActivePro').innerText = data.stats.activePro;
+        document.getElementById('statFreeUsers').innerText = data.stats.totalUsers - data.stats.activePro;
+
+        renderUsersTable(allUsersData);
+      } catch (err) {
+        alert("Admin data load nahi ho paya: " + err.message);
+      } finally {
+        refIcon.classList.remove('animate-spin');
+      }
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-500">Koi user nahi mila</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const statusBadge = u.isPro
+          ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-full font-bold text-[10px] inline-flex items-center gap-1"><i class="fas fa-crown"></i> PRO PASS</span>`
+          : `<span class="bg-slate-700/60 text-slate-400 px-2.5 py-1 rounded-full font-bold text-[10px]">FREE</span>`;
+
+        const expiryText = u.isPro
+          ? `<span class="text-emerald-400 font-bold">${u.daysLeft} din bache hain</span>`
+          : `<span class="text-slate-500">Expired / Inactive</span>`;
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-2.5">
+                <img src="${u.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + u.id}" class="w-8 h-8 rounded-full border border-slate-700 object-cover bg-slate-800" />
+                <div>
+                  <p class="font-bold text-white text-xs leading-none">${u.name}</p>
+                  <p class="text-[11px] text-slate-400 font-mono mt-0.5">${u.email}</p>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4">${statusBadge}</td>
+            <td class="py-3 px-4">
+              <p class="text-[11px] text-slate-300 font-medium">${u.plan}</p>
+              <p class="text-[10px] mt-0.5">${expiryText}</p>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <div class="inline-flex gap-1.5 flex-wrap justify-end">
+                <button onclick="setProDays('${u.id}', 30, 'admin_30days', this)" class="bg-slate-800 hover:bg-emerald-600 text-emerald-400 hover:text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold border border-slate-700 hover:border-emerald-500 transition">
+                  +30 Din
+                </button>
+                <button onclick="setProDays('${u.id}', 90, 'admin_90days', this)" class="bg-slate-800 hover:bg-amber-600 text-amber-400 hover:text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold border border-slate-700 hover:border-amber-500 transition">
+                  +90 Din
+                </button>
+                <button onclick="setProDays('${u.id}', 365, 'admin_1year', this)" class="bg-slate-800 hover:bg-indigo-600 text-indigo-400 hover:text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold border border-slate-700 hover:border-indigo-500 transition">
+                  +1 Saal
+                </button>
+                <button onclick="setProDays('${u.id}', 0, 'free', this)" class="bg-slate-800 hover:bg-rose-600 text-rose-400 hover:text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold border border-slate-700 hover:border-rose-500 transition" title="Pro Hatao">
+                  <i class="fas fa-ban"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterUsersList() {
+      const q = document.getElementById('userSearchInput').value.toLowerCase().trim();
+      if (!q) {
+        renderUsersTable(allUsersData);
+        return;
+      }
+      const filtered = allUsersData.filter(u => 
+        u.email.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || u.id.includes(q)
+      );
+      renderUsersTable(filtered);
+    }
+
+    async function setProDays(userId, days, planName, btn) {
+      if (!adminSession) return;
+      const oldHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${FUNCTIONS_URL}/admin-manage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminSession.access_token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ action: 'set-pro', targetUserId: userId, days, plan: planName })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        // Instant Table Update
+        await fetchAdminData();
+      } catch (err) {
+        alert("Action failed: " + err.message);
+      } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+      }
+    }
+  </script>
+</Layout>
