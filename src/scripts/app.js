@@ -1,8 +1,8 @@
 import { SITE_LOGO_URL, FEED_OPACITY_BOTTOM, FEED_OPACITY_TOP, MY_GALLERY_IMAGES } from '../data/posters.js';
 
 // === 1. APNA SUPABASE URL & ANON KEY YAHAN DALEIN ===
-const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY";
+const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
 // 1-3 mahine sab kuch free rakhna ho toh true karein; Pro/Payment/Referral chalu rakhne ke liye false rakhein
