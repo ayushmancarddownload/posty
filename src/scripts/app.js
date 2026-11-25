@@ -5,7 +5,6 @@ const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
-// Ab sab kuch Pro Plan ke piche lock hai (false rakha gaya hai)
 const FREE_LAUNCH_MODE = false;
 
 let sb = null;
@@ -118,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFeed();
 });
 
-// === REFERRAL SYSTEM ===
+// === TIERED REFERRAL SYSTEM (2 -> 7d, 5 -> 30d, 10 -> 90d) ===
 function captureReferralParam() {
   const params = new URLSearchParams(window.location.search);
   const ref = params.get('ref');
@@ -138,7 +137,7 @@ async function claimPendingReferral(myUid) {
   }
 
   try {
-    await fetch(`${FUNCTIONS_URL}/record-referral`, {
+    const res = await fetch(`${FUNCTIONS_URL}/record-referral`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -147,6 +146,10 @@ async function claimPendingReferral(myUid) {
       },
       body: JSON.stringify({ referrer_id: referrerId, referred_user_id: myUid })
     });
+    const data = await res.json();
+    if (data.tierUnlocked) {
+      console.log('Tier unlocked for referrer:', data.tierUnlocked);
+    }
   } catch (e) {
     console.error('Referral error:', e);
   } finally {
@@ -164,8 +167,42 @@ async function fetchReferralCount(myUid) {
   const total = count || 0;
   const textEl = document.getElementById('refCountText');
   const barEl = document.getElementById('refProgressBar');
+  const statusMsg = document.getElementById('refStatusMsg');
+
   if (textEl) textEl.innerText = `${Math.min(total, 10)} / 10`;
   if (barEl) barEl.style.width = `${Math.min(100, (total / 10) * 100)}%`;
+
+  // Milestone 1 (2 Friends = 7 Days)
+  const m1 = document.getElementById('milestone-box-1');
+  const mb1 = document.getElementById('milestone-badge-1');
+  if (total >= 2) {
+    m1?.classList.add('bg-emerald-100', 'border-emerald-500');
+    if (mb1) { mb1.innerText = '✅ UNLOCKED'; mb1.className = 'text-[8px] font-bold text-emerald-700 block mt-0.5'; }
+  }
+
+  // Milestone 2 (5 Friends = 30 Days)
+  const m2 = document.getElementById('milestone-box-2');
+  const mb2 = document.getElementById('milestone-badge-2');
+  if (total >= 5) {
+    m2?.classList.add('bg-teal-100', 'border-teal-500');
+    if (mb2) { mb2.innerText = '✅ UNLOCKED'; mb2.className = 'text-[8px] font-bold text-teal-700 block mt-0.5'; }
+  }
+
+  // Milestone 3 (10 Friends = 90 Days)
+  const m3 = document.getElementById('milestone-box-3');
+  const mb3 = document.getElementById('milestone-badge-3');
+  if (total >= 10) {
+    m3?.classList.add('bg-amber-100', 'border-amber-500');
+    if (mb3) { mb3.innerText = '✅ UNLOCKED'; mb3.className = 'text-[8px] font-bold text-amber-700 block mt-0.5'; }
+  }
+
+  // Next Target Status Message
+  if (statusMsg) {
+    if (total < 2) statusMsg.innerText = `Sirf ${2 - total} dost aur invite karein -> 7 Din Pro Free!`;
+    else if (total < 5) statusMsg.innerText = `Sirf ${5 - total} dost aur invite karein -> 30 Din Pro Free!`;
+    else if (total < 10) statusMsg.innerText = `Sirf ${10 - total} dost aur invite karein -> 90 Din Pro Free!`;
+    else statusMsg.innerText = `🎉 Mubarak ho! Saare 3 Free Pro Milestones Unlock Ho Gaye!`;
+  }
 }
 
 async function shareReferralOnWhatsApp() {
@@ -299,11 +336,11 @@ function selectPlan(planId) {
   if (planId === '30days') {
     c30.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-amber-500 bg-amber-50/60 transition relative shadow-md";
     c90.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-gray-200 bg-gray-50/50 transition relative";
-    if (btnText) btnText.innerText = "Unlock 30 Days Pass — ₹49";
+    if (btnText) btnText.innerText = "Instant Buy: 30 Days Pass — ₹49";
   } else {
     c90.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-amber-500 bg-amber-50/60 transition relative shadow-md";
     c30.className = "cursor-pointer rounded-2xl p-3.5 border-2 border-gray-200 bg-gray-50/50 transition relative";
-    if (btnText) btnText.innerText = "Unlock 90 Days Pass — ₹99";
+    if (btnText) btnText.innerText = "Instant Buy: 90 Days Pass — ₹99";
   }
 }
 
