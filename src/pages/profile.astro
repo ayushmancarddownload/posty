@@ -30,13 +30,13 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         </button>
       </header>
 
-      <!-- GOOGLE SIGN IN CARD (Sirf Logout hone par dikhega) -->
+      <!-- GOOGLE SIGN IN CARD (Sirf bina login wale users ke liye cloud sync prompt) -->
       <div id="loginPromptCard" class="cute-card p-5 mt-4 border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 text-center shadow-sm">
         <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-emerald-100">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6" alt="Google" />
         </div>
-        <h2 class="text-sm font-bold text-emerald-950">Google se Login Karein</h2>
-        <p class="text-[11px] text-emerald-700/80 mb-3 mt-0.5">Apna naam, photo aur Mobile No cloud par save rakhne ke liye login karein.</p>
+        <h2 class="text-sm font-bold text-emerald-950">Google Account se Jodein</h2>
+        <p class="text-[11px] text-emerald-700/80 mb-3 mt-0.5">Apna naam, photo aur Mobile No cloud par save rakhne ke liye sign in karein.</p>
         <button id="googleLoginBtn" type="button" class="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl shadow-sm flex items-center justify-center gap-2 text-xs font-bold text-gray-700 active:scale-95 transition cursor-pointer">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4" alt="G" />
           <span id="googleLoginBtnText">Continue with Google</span>
@@ -59,12 +59,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
           </div>
           <input type="file" id="profilePicInput" accept="image/*" class="hidden" />
 
-          <!-- Logged in Google Email & Plan Badge -->
+          <!-- Email & Plan Status -->
           <div class="text-center mt-2">
-            <span id="planBadge" class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1">
-              Logged Out
+            <span id="planBadge" class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1">
+              Free Plan
             </span>
-            <p id="userEmailText" class="text-xs text-gray-400 font-mono">Not Logged In</p>
+            <p id="userEmailText" class="text-xs text-gray-400 font-mono">Guest Mode (Device Saved)</p>
           </div>
         </div>
 
@@ -114,7 +114,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
           </div>
         </div>
 
-        <button id="saveCardBtn" class="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md shadow-emerald-200 active:scale-95 transition flex items-center justify-center gap-1.5">
+        <button id="saveCardBtn" class="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md shadow-emerald-200 active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer">
           <i class="fas fa-check"></i> <span>Profile Changes Save Karein</span>
         </button>
       </div>
@@ -128,7 +128,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
             </div>
             <div>
               <h3 class="text-xs font-bold text-emerald-950">Posty Pro Pass</h3>
-              <p id="subExpiryInfo" class="text-[10px] text-gray-500">Login to view pass</p>
+              <p id="subExpiryInfo" class="text-[10px] text-gray-500">Free Account</p>
             </div>
           </div>
           <a href={`${baseUrl}?openPricing=true`} class="bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm hover:scale-105 active:scale-95 transition">
@@ -137,22 +137,22 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
         </div>
       </div>
 
-      <!-- Danger & Account Actions (Sirf Logged-In User ke liye dikhega) -->
-      <div id="accountSettingsCard" class="cute-card p-4 mt-4 border border-red-100 space-y-3 mb-10 hidden">
+      <!-- Account Settings (Clear & Logout Actions) -->
+      <div id="accountSettingsCard" class="cute-card p-4 mt-4 border border-red-100 space-y-3 mb-10">
         <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-1">Account Settings</h4>
         
         <!-- Logout Button -->
         <button id="logoutBtn" type="button" class="w-full py-3 px-3.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold flex items-center justify-between border border-gray-200 active:scale-95 transition cursor-pointer">
           <span class="flex items-center gap-2">
-            <i class="fas fa-sign-out-alt text-gray-400"></i> Account se Logout Karein
+            <i class="fas fa-sign-out-alt text-gray-400"></i> Data Clear / Logout Karein
           </span>
           <i class="fas fa-chevron-right text-[10px] text-gray-400"></i>
         </button>
 
-        <!-- Delete Account Button -->
-        <button id="deleteBtn" type="button" class="w-full py-3 px-3.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold flex items-center justify-between border border-red-200 active:scale-95 transition cursor-pointer">
+        <!-- Delete Account Button (Sirf Google Logged In user ke liye) -->
+        <button id="deleteBtn" type="button" class="w-full py-3 px-3.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold flex items-center justify-between border border-red-200 active:scale-95 transition cursor-pointer hidden">
           <span class="flex items-center gap-2">
-            <i class="fas fa-trash-alt text-red-500"></i> Apna Account Delete Karein
+            <i class="fas fa-trash-alt text-red-500"></i> Permanent Account Delete Karein
           </span>
           <span class="text-[9px] bg-red-200 text-red-800 font-extrabold px-2 py-0.5 rounded-full">Permanent</span>
         </button>
@@ -180,8 +180,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
   <script is:inline define:vars={{ baseUrl }}>
     // ⚠️ APNI APP.JS KI WORKING KEYS YAHAN DALEIN:
     const SUPABASE_URL = "https://wlxnxamlsqezpjsdyrah.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK"; 
-    // ^ Agar aapne app.js me koi alag key dali hai, toh wahi key yahan paste karein!
+const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
 
     const DEFAULT_GUEST_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Guest";
 
@@ -203,7 +202,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
     };
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Supabase Initialization
+      // 1. SABSE PEHLE: Local storage se saved details form me bhar do (Chahe Google Login ho ya na ho!)
+      loadLocalProfile();
+
+      // 2. Supabase Check
       if (window.supabase) {
         sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         try {
@@ -222,7 +224,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
         updateAuthUI(null);
       }
 
-      // 2. Button Listeners
+      // 3. Button Listeners
       document.getElementById('googleLoginBtn')?.addEventListener('click', handleGoogleLogin);
       document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
       document.getElementById('deleteBtn')?.addEventListener('click', handleDeleteAccount);
@@ -237,63 +239,8 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
       document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
     });
 
-    function updateAuthUI(user) {
-      const loginCard = document.getElementById('loginPromptCard');
-      const accountSettings = document.getElementById('accountSettingsCard');
-      const emailText = document.getElementById('userEmailText');
-      const badge = document.getElementById('planBadge');
-      const subInfo = document.getElementById('subExpiryInfo');
-
-      if (user) {
-        // === LOGGED IN ===
-        loginCard?.classList.add('hidden');
-        accountSettings?.classList.remove('hidden');
-
-        emailText.innerText = user.email || user.user_metadata?.full_name || user.user_metadata?.name || 'Google User';
-        fetchPlanInfo(user.id);
-        loadUserProfile(user);
-      } else {
-        // === LOGGED OUT ===
-        loginCard?.classList.remove('hidden');
-        accountSettings?.classList.add('hidden');
-
-        emailText.innerText = "Not Logged In";
-        badge.innerText = "Logged Out";
-        badge.className = "inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-1";
-        if (subInfo) subInfo.innerText = "Login to activate or view Pro Pass";
-
-        clearFormFields();
-      }
-    }
-
-    function clearFormFields() {
-      document.getElementById('nameInput').value = '';
-      document.getElementById('professionInput').value = '';
-      document.getElementById('contactInput').value = '';
-      document.getElementById('profileAvatar').src = DEFAULT_GUEST_AVATAR;
-      document.getElementById('socialsToggle').checked = true;
-      document.getElementById('instaInput').value = '';
-      document.getElementById('twitterInput').value = '';
-      document.getElementById('fbInput').value = '';
-
-      userState = {
-        name: "",
-        extra: "",
-        contact: "",
-        pic: DEFAULT_GUEST_AVATAR,
-        socials: {
-          visible: true,
-          insta: { val: "", visible: true },
-          twitter: { val: "", visible: true },
-          fb: { val: "", visible: true }
-        }
-      };
-    }
-
-    function loadUserProfile(user) {
-      const meta = user?.user_metadata || {};
-      
-      // 1. Local Storage Data
+    // Form me saved data bharta hai
+    function loadLocalProfile() {
       const saved = localStorage.getItem('aestheticUser');
       if (saved) {
         try {
@@ -302,21 +249,6 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
         } catch (e) {}
       }
 
-      // 2. Google OAuth se aane wali saari possible keys check karein!
-      const googleName = meta.custom_name || meta.full_name || meta.name || user.email?.split('@')[0] || '';
-      const googlePic = meta.custom_pic || meta.avatar_url || meta.picture || '';
-      const googleExtra = meta.custom_extra || meta.profession || '';
-      const googleContact = meta.custom_contact || meta.phone || '';
-      const googleSocials = meta.custom_socials || null;
-
-      // Agar local me naam/photo nahi hai toh Google account se lein
-      if (!userState.name && googleName) userState.name = googleName;
-      if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && googlePic) userState.pic = googlePic;
-      if (!userState.extra && googleExtra) userState.extra = googleExtra;
-      if (!userState.contact && googleContact) userState.contact = googleContact;
-      if (googleSocials && typeof googleSocials === 'object') userState.socials = { ...userState.socials, ...googleSocials };
-
-      // 3. Form me show karein
       document.getElementById('nameInput').value = userState.name || '';
       document.getElementById('professionInput').value = userState.extra || '';
       document.getElementById('contactInput').value = userState.contact || '';
@@ -327,10 +259,48 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
       document.getElementById('instaInput').value = soc.insta?.val || '';
       document.getElementById('twitterInput').value = soc.twitter?.val || '';
       document.getElementById('fbInput').value = soc.fb?.val || '';
+    }
 
-      // Local storage sync karein taaki posters me bhi naam aa jaye
-      if (userState.name || userState.pic !== DEFAULT_GUEST_AVATAR) {
+    function updateAuthUI(user) {
+      const loginCard = document.getElementById('loginPromptCard');
+      const deleteBtn = document.getElementById('deleteBtn');
+      const emailText = document.getElementById('userEmailText');
+
+      if (user) {
+        // === USER IS LOGGED IN WITH GOOGLE ===
+        loginCard?.classList.add('hidden');
+        deleteBtn?.classList.remove('hidden');
+
+        emailText.innerText = user.email || user.user_metadata?.full_name || 'Google User';
+        fetchPlanInfo(user.id);
+
+        // Google metadata se details merge karein
+        const meta = user.user_metadata || {};
+        const googleName = meta.custom_name || meta.full_name || meta.name || '';
+        const googlePic = meta.custom_pic || meta.avatar_url || meta.picture || '';
+        const googleExtra = meta.custom_extra || meta.profession || '';
+        const googleContact = meta.custom_contact || meta.phone || '';
+
+        if (!userState.name && googleName) userState.name = googleName;
+        if ((!userState.pic || userState.pic === DEFAULT_GUEST_AVATAR) && googlePic) userState.pic = googlePic;
+        if (!userState.extra && googleExtra) userState.extra = googleExtra;
+        if (!userState.contact && googleContact) userState.contact = googleContact;
+
+        // Form update karein
+        document.getElementById('nameInput').value = userState.name || '';
+        document.getElementById('professionInput').value = userState.extra || '';
+        document.getElementById('contactInput').value = userState.contact || '';
+        document.getElementById('profileAvatar').src = userState.pic || DEFAULT_GUEST_AVATAR;
+
         localStorage.setItem('aestheticUser', JSON.stringify(userState));
+      } else {
+        // === GUEST / MANUAL USER (NO GOOGLE) ===
+        loginCard?.classList.remove('hidden');
+        deleteBtn?.classList.add('hidden');
+
+        emailText.innerText = "Guest Mode (Device Saved)";
+        // YAHAN FORM KO KABHI SAAF NAHI KARNA! Local profile waise hi dikhegi!
+        loadLocalProfile();
       }
     }
 
@@ -352,7 +322,6 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
       }
     }
 
-    // Google Login Function (Wahi same redirect jo Get Pro me chalta hai!)
     async function handleGoogleLogin() {
       if (!sb) {
         alert("Supabase initialize nahi ho paya!");
@@ -361,13 +330,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
       const btnText = document.getElementById('googleLoginBtnText');
       if (btnText) btnText.innerText = "Connecting to Google...";
 
-      // Wahi working redirect URL jo app.js me hai
-      const redirectUrl = `${window.location.origin}${baseUrl}`;
-
       const { error } = await sb.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl
+          redirectTo: `${window.location.origin}${baseUrl}`
         }
       });
       if (error) {
@@ -394,10 +360,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
         fb: { val: document.getElementById('fbInput').value.trim(), visible: true }
       };
 
-      // 1. Local Storage me save karein
+      // 1. Local Storage me save karein (Offline / Manual users ke liye)
       localStorage.setItem('aestheticUser', JSON.stringify(userState));
 
-      // 2. Supabase Cloud Account me permanently save karein!
+      // 2. Agar user Google logged in hai toh Cloud me bhi permanently save karein!
       if (sb && currentUser) {
         try {
           await sb.auth.updateUser({
@@ -468,7 +434,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
     }
 
     async function handleLogout() {
-      const c = confirm("Kya aap logout karna chahte hain?");
+      const c = confirm("Kya aap apna profile data clear karna chahte hain?");
       if (!c) return;
 
       try {
@@ -477,13 +443,23 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tvq6grbkSIsG1Doh7Y7Txw_t_cFm7BK";
         console.warn("Logout error:", e);
       }
 
+      // Sirf user ke button dabane par hi data clear hoga
       localStorage.removeItem('aestheticUser');
       localStorage.removeItem('postyFavorites');
       localStorage.removeItem('posty_ref');
 
       currentUser = null;
+      userState = {
+        name: "",
+        extra: "",
+        contact: "",
+        pic: DEFAULT_GUEST_AVATAR,
+        socials: { visible: true, insta: { val: "", visible: true }, twitter: { val: "", visible: true }, fb: { val: "", visible: true } }
+      };
+
+      loadLocalProfile();
       updateAuthUI(null);
-      alert("Aap logout ho chuke hain.");
+      alert("Aapka profile data clear ho gaya hai.");
     }
 
     async function handleDeleteAccount() {
