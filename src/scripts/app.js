@@ -21,6 +21,9 @@ let activeCategory = 'All';
 let favoriteUrls = JSON.parse(localStorage.getItem('postyFavorites') || '[]');
 let pendingShareFile = null;
 
+// Pending Action (Jab user bina details bhare kisi poster par click kare)
+let pendingUserAction = null;
+
 let user = {
   name: "Aesthetic Creator",
   extra: "Poster Artist",
@@ -66,14 +69,23 @@ if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")
       await fetchUserSubscription(currentAuthUser.id);
       await fetchReferralCount(currentAuthUser.id);
 
-      if (!localStorage.getItem('aestheticUser')) {
-        const meta = currentAuthUser.user_metadata || {};
-        if (meta.full_name) {
-          user.name = meta.full_name;
-          const nameInput = document.getElementById('userNameInput');
-          if (nameInput && !nameInput.value) nameInput.value = meta.full_name;
-        }
-        if (meta.avatar_url) updateAppImage(meta.avatar_url);
+      const meta = currentAuthUser.user_metadata || {};
+      const cloudName = meta.custom_name || meta.full_name || meta.name || '';
+      const cloudPic = meta.custom_pic || meta.avatar_url || meta.picture || '';
+
+      if (!localStorage.getItem('aestheticUser') && (cloudName || cloudPic)) {
+        if (cloudName) user.name = cloudName;
+        if (cloudPic) user.pic = cloudPic;
+        localStorage.setItem('aestheticUser', JSON.stringify(user));
+        startApp();
+      }
+
+      // Agar login ke baad koi pending action tha toh execute karein
+      if (pendingUserAction) {
+        document.getElementById('userDetailsModal')?.classList.add('hidden');
+        const action = pendingUserAction;
+        pendingUserAction = null;
+        action();
       }
     } else {
       userSubscription = { plan: 'free', proUntil: 0 };
@@ -87,26 +99,29 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPWA();
   checkInstamojoReturn();
 
+  // Saved user profile load karein (agar pehle se hai)
   const saved = localStorage.getItem('aestheticUser');
   if (saved) {
-    const parsed = JSON.parse(saved);
-    if (parsed.socials && typeof parsed.socials.insta === 'string') {
-      user = {
-        ...parsed,
-        socials: {
-          visible: true,
-          insta: { val: parsed.socials.insta, visible: true },
-          twitter: { val: parsed.socials.twitter, visible: true },
-          fb: { val: parsed.socials.fb, visible: true }
-        }
-      };
-    } else {
-      user = parsed;
-    }
-    startApp();
-  } else {
-    document.getElementById('userDetailsModal')?.classList.remove('hidden');
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.socials && typeof parsed.socials.insta === 'string') {
+        user = {
+          ...parsed,
+          socials: {
+            visible: true,
+            insta: { val: parsed.socials.insta, visible: true },
+            twitter: { val: parsed.socials.twitter, visible: true },
+            fb: { val: parsed.socials.fb, visible: true }
+          }
+        };
+      } else {
+        user = parsed;
+      }
+    } catch (e) {}
   }
+
+  // OPTION C: Site khulte hi turant feed aur navigation chalu karein (NO POPUP!)
+  startApp();
 
   document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
   document.getElementById('updateProfilePicInput')?.addEventListener('change', handleFileSelect);
@@ -116,6 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategories();
   loadFeed();
 });
+
+// Check karein ki user ne profile setup kiya hai ya nahi
+function hasProfileSetup() {
+  const saved = localStorage.getItem('aestheticUser');
+  return Boolean(saved || currentAuthUser);
+}
+
+function closeUserSetupModal() {
+  pendingUserAction = null;
+  document.getElementById('userDetailsModal')?.classList.add('hidden');
+}
 
 // === TIERED REFERRAL SYSTEM (2 -> 7d, 5 -> 30d, 10 -> 90d) ===
 function captureReferralParam() {
@@ -146,10 +172,7 @@ async function claimPendingReferral(myUid) {
       },
       body: JSON.stringify({ referrer_id: referrerId, referred_user_id: myUid })
     });
-    const data = await res.json();
-    if (data.tierUnlocked) {
-      console.log('Tier unlocked for referrer:', data.tierUnlocked);
-    }
+    await res.json();
   } catch (e) {
     console.error('Referral error:', e);
   } finally {
@@ -172,7 +195,6 @@ async function fetchReferralCount(myUid) {
   if (textEl) textEl.innerText = `${Math.min(total, 10)} / 10`;
   if (barEl) barEl.style.width = `${Math.min(100, (total / 10) * 100)}%`;
 
-  // Milestone 1 (2 Friends = 7 Days)
   const m1 = document.getElementById('milestone-box-1');
   const mb1 = document.getElementById('milestone-badge-1');
   if (total >= 2) {
@@ -180,7 +202,6 @@ async function fetchReferralCount(myUid) {
     if (mb1) { mb1.innerText = '✅ UNLOCKED'; mb1.className = 'text-[8px] font-bold text-emerald-700 block mt-0.5'; }
   }
 
-  // Milestone 2 (5 Friends = 30 Days)
   const m2 = document.getElementById('milestone-box-2');
   const mb2 = document.getElementById('milestone-badge-2');
   if (total >= 5) {
@@ -188,7 +209,6 @@ async function fetchReferralCount(myUid) {
     if (mb2) { mb2.innerText = '✅ UNLOCKED'; mb2.className = 'text-[8px] font-bold text-teal-700 block mt-0.5'; }
   }
 
-  // Milestone 3 (10 Friends = 90 Days)
   const m3 = document.getElementById('milestone-box-3');
   const mb3 = document.getElementById('milestone-badge-3');
   if (total >= 10) {
@@ -196,7 +216,6 @@ async function fetchReferralCount(myUid) {
     if (mb3) { mb3.innerText = '✅ UNLOCKED'; mb3.className = 'text-[8px] font-bold text-amber-700 block mt-0.5'; }
   }
 
-  // Next Target Status Message
   if (statusMsg) {
     if (total < 2) statusMsg.innerText = `Sirf ${2 - total} dost aur invite karein -> 7 Din Pro Free!`;
     else if (total < 5) statusMsg.innerText = `Sirf ${5 - total} dost aur invite karein -> 30 Din Pro Free!`;
@@ -285,9 +304,9 @@ function updateAuthUI() {
     loggedIn?.classList.remove('hidden');
     const avatar = document.getElementById('authUserAvatar');
     const email = document.getElementById('authUserEmail');
-    if (avatar) avatar.src = meta.avatar_url || user.pic;
-    if (email) email.innerText = currentAuthUser.email || meta.full_name || "Google User";
-    if (setupBtn) setupBtn.innerHTML = `<i class="fas fa-check-circle text-emerald-500"></i> Logged in as ${meta.full_name || currentAuthUser.email}`;
+    if (avatar) avatar.src = meta.avatar_url || meta.picture || user.pic;
+    if (email) email.innerText = currentAuthUser.email || meta.full_name || meta.name || "Google User";
+    if (setupBtn) setupBtn.innerHTML = `<i class="fas fa-check-circle text-emerald-500"></i> Logged in as ${meta.full_name || meta.name || currentAuthUser.email}`;
   } else {
     loggedOut?.classList.remove('hidden');
     loggedIn?.classList.add('hidden');
@@ -366,7 +385,7 @@ async function startInstamojoPayment() {
       body: JSON.stringify({
         planId: selectedPlanId,
         uid: currentAuthUser.id,
-        name: meta.full_name || user.name,
+        name: meta.full_name || meta.name || user.name,
         email: currentAuthUser.email || "",
         phone: user.contact || ""
       })
@@ -554,9 +573,13 @@ function performCrop() {
   cropper = null;
 }
 
+// User details save karne par (Popup se)
 function saveUserSetup() {
   const nameInput = document.getElementById('userNameInput');
-  if (!nameInput || !nameInput.value.trim()) return;
+  if (!nameInput || !nameInput.value.trim()) {
+    alert("Kripya apna naam bharein!");
+    return;
+  }
 
   user.name = nameInput.value.trim();
   user.extra = document.getElementById('professionInput').value.trim() || "Digital Creator";
@@ -579,6 +602,13 @@ function saveUserSetup() {
   document.getElementById('userDetailsModal')?.classList.add('hidden');
   startApp();
   loadFeed();
+
+  // Agar user ne kisi poster par click kiya tha, toh wo poster ab open karein!
+  if (pendingUserAction) {
+    const action = pendingUserAction;
+    pendingUserAction = null;
+    action();
+  }
 }
 
 function startApp() {
@@ -740,7 +770,7 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
           <button onclick="shareFeedItem('print-area-${index}', this)" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="fab fa-whatsapp"></i>
           </button>
-          <!-- Feed Download Button LOCKED FOR PRO (👑) -->
+          <!-- Feed Download (LOCKED 👑) -->
           <button onclick="requirePro(() => downloadFeedItem('print-area-${index}', this))" class="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
             <i class="fas fa-download"></i>
             <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
@@ -832,410 +862,5 @@ async function handleShareCanvas(canvas) {
   }
 }
 
+// Option C Check on Share: Agar user ne details nahi bhari toh pehle popup khulega!
 async function shareFeedItem(containerId, btn) {
-  const captureTarget = document.getElementById(containerId);
-  if (!captureTarget) return;
-
-  const originalIcon = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
-    btn.disabled = true;
-    btn.classList.add('opacity-75', 'cursor-wait');
-  }
-
-  try {
-    const canvas = await window.html2canvas(captureTarget, {
-      scale: 1.5,
-      useCORS: true,
-      allowTaint: false,
-      imageTimeout: 5000,
-      backgroundColor: null,
-      ignoreElements: (el) =>
-        (el.classList?.contains('gallery-item') && !el.contains(captureTarget)) ||
-        el.classList?.contains('capture-hide') ||
-        ['modal', 'pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
-      onclone: (clonedDoc) => {
-        const el = clonedDoc.getElementById(containerId);
-        if (el) {
-          el.style.borderRadius = '0';
-          el.style.border = 'none';
-          el.style.boxShadow = 'none';
-        }
-      }
-    });
-
-    await handleShareCanvas(canvas);
-  } catch (err) {
-    console.error('Share error:', err);
-    alert("Share karne me samasya aayi. Kripya Download button try karein.");
-  } finally {
-    if (btn) {
-      btn.innerHTML = originalIcon;
-      btn.disabled = false;
-      btn.classList.remove('opacity-75', 'cursor-wait');
-    }
-  }
-}
-
-async function sharePoster(btn) {
-  const captureArea = document.getElementById('captureArea');
-  if (!captureArea) return;
-
-  const originalIcon = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.innerHTML = '<i class="fas fa-spinner animate-spin text-xs"></i>';
-    btn.disabled = true;
-    btn.classList.add('opacity-75', 'cursor-wait');
-  }
-
-  try {
-    const canvas = await window.html2canvas(captureArea, {
-      scale: 1.5,
-      useCORS: true,
-      allowTaint: false,
-      imageTimeout: 5000,
-      backgroundColor: null,
-      ignoreElements: (el) =>
-        el.id === 'mainContent' ||
-        el.classList?.contains('capture-hide') ||
-        ['pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
-      onclone: (clonedDoc) => {
-        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
-        const captureDiv = clonedDoc.getElementById('captureArea');
-        if (captureDiv) {
-          captureDiv.style.border = 'none';
-          captureDiv.style.boxShadow = 'none';
-          captureDiv.style.borderRadius = '0';
-        }
-      }
-    });
-
-    await handleShareCanvas(canvas);
-  } catch (err) {
-    console.error('Share error:', err);
-    alert("Share karne me samasya aayi. Kripya Download button try karein.");
-  } finally {
-    if (btn) {
-      btn.innerHTML = originalIcon;
-      btn.disabled = false;
-      btn.classList.remove('opacity-75', 'cursor-wait');
-    }
-  }
-}
-
-function adjustNameSize() {
-  const nameEl = document.getElementById('modalProfileName');
-  if (!nameEl) return;
-  nameEl.style.fontSize = '20px';
-  let currentSize = 20;
-  while (nameEl.scrollWidth > nameEl.offsetWidth && currentSize > 10) {
-    currentSize -= 0.5;
-    nameEl.style.fontSize = `${currentSize}px`;
-  }
-}
-
-function openEditor(src) {
-  const modal = document.getElementById('modal');
-  document.getElementById('modalImage').src = src;
-  document.getElementById('modalProfileName').innerText = user.name;
-  document.getElementById('modalProfileExtra').innerText = user.extra;
-  document.getElementById('modalProfileContact').innerText = user.contact;
-  document.getElementById('modalProfilePic').src = user.pic;
-  document.getElementById('posterQuoteBox')?.classList.add('hidden');
-  if (!isProUser()) {
-    hideWatermark = false;
-    document.getElementById('editorWatermark')?.classList.remove('hidden');
-  }
-
-  renderSocials();
-
-  const overlay = document.getElementById('profileOverlay');
-  const currentTheme = overlay.classList.contains('theme-right') ? 'right' : overlay.classList.contains('theme-center') ? 'center' : 'left';
-  setTheme(currentTheme);
-
-  const logoImg = document.getElementById('userLogoImg');
-  if (logoImg) logoImg.src = user.logo || SITE_LOGO_URL;
-
-  changeProfileBackground();
-  document.getElementById('cardOpacitySlider').value = currentOpacity * 100;
-  document.getElementById('opacityValueDisplay').innerText = Math.round(currentOpacity * 100) + '%';
-
-  modal.classList.remove('hidden');
-  document.getElementById('floatingButtonsContainer').classList.remove('hidden');
-  document.getElementById('bottom-nav').classList.add('hidden');
-  setTimeout(adjustNameSize, 50);
-  window.history.pushState({ editorOpen: true }, "");
-}
-
-function setTextColor(color) {
-  const overlay = document.getElementById('profileOverlay');
-  if (overlay) overlay.style.color = color;
-}
-
-function setPhotoRing(ringClass) {
-  const pic = document.getElementById('modalProfilePic');
-  if (!pic) return;
-  pic.classList.remove('ring-white', 'ring-gold', 'ring-emerald', 'ring-pink', 'ring-none');
-  pic.classList.add(ringClass);
-}
-
-function setCardLayout(layout) {
-  const overlay = document.getElementById('profileOverlay');
-  if (!overlay) return;
-  overlay.classList.remove('card-style-overlay', 'card-style-pill', 'card-style-glass');
-  if (layout === 'overlay') overlay.classList.add('card-style-overlay');
-  if (layout === 'pill') overlay.classList.add('card-style-pill');
-  if (layout === 'glass') overlay.classList.add('card-style-glass');
-}
-
-function openQuotePanel() {
-  const currentQuote = document.getElementById('posterQuoteText')?.innerText || '';
-  document.getElementById('quoteInput').value = currentQuote;
-  togglePanel('quoteEditPanel');
-}
-
-function savePosterQuote() {
-  const val = document.getElementById('quoteInput').value.trim();
-  const box = document.getElementById('posterQuoteBox');
-  const textEl = document.getElementById('posterQuoteText');
-  if (val) {
-    textEl.innerText = val;
-    box.classList.remove('hidden');
-  } else {
-    box.classList.add('hidden');
-  }
-  document.getElementById('quoteEditPanel')?.classList.add('hidden');
-}
-
-function removePosterQuote() {
-  document.getElementById('posterQuoteText').innerText = '';
-  document.getElementById('posterQuoteBox')?.classList.add('hidden');
-  document.getElementById('quoteEditPanel')?.classList.add('hidden');
-}
-
-function renderSocials() {
-  const socialsContainer = document.getElementById('socialsContainer');
-  const mainSection = document.querySelector('#profileOverlay .social-media-section');
-  if (!mainSection) return;
-
-  const anyVisible = user.socials.insta.visible || user.socials.twitter.visible || user.socials.fb.visible;
-  if (!user.socials.visible || !anyVisible) {
-    mainSection.classList.add('hidden');
-    mainSection.style.display = 'none';
-  } else {
-    mainSection.classList.remove('hidden');
-    mainSection.style.display = '';
-  }
-
-  let itemsHTML = `<div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
-  [
-    { icon: 'fab fa-instagram', data: user.socials?.insta },
-    { icon: 'fab fa-twitter', data: user.socials?.twitter },
-    { icon: 'fab fa-facebook-f', data: user.socials?.fb }
-  ].forEach(p => {
-    if (!p.data?.visible) return;
-    itemsHTML += p.data.val
-      ? `<div class="info-row"><i class="${p.icon} fw-icon"></i> <span>${p.data.val}</span></div>`
-      : `<div class="info-row"><i class="${p.icon} opacity-60 fw-icon"></i></div>`;
-  });
-  itemsHTML += `</div>`;
-  socialsContainer.innerHTML = itemsHTML;
-}
-
-function editSocials() {
-  document.getElementById('editInstaInput').value = user.socials?.insta?.val || '';
-  document.getElementById('editTwitterInput').value = user.socials?.twitter?.val || '';
-  document.getElementById('editFbInput').value = user.socials?.fb?.val || '';
-  updateToggleButton('editorSocialsToggle', user.socials.visible);
-  updateToggleButton('btn-insta', user.socials.insta.visible);
-  updateToggleButton('btn-twitter', user.socials.twitter.visible);
-  updateToggleButton('btn-fb', user.socials.fb.visible);
-
-  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel'].forEach(p => document.getElementById(p)?.classList.add('hidden'));
-  document.getElementById('socialsEditPanel')?.classList.remove('hidden');
-}
-
-function updateToggleButton(btnId, isVisible) {
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  const icon = btn.querySelector('i');
-  if (isVisible) {
-    icon.className = 'fas fa-eye';
-    btn.classList.remove('text-red-400', 'border-red-100', 'bg-red-50');
-    if (btnId !== 'editorSocialsToggle') btn.classList.add('text-emerald-400');
-  } else {
-    icon.className = 'fas fa-eye-slash';
-    if (btnId !== 'editorSocialsToggle') {
-      btn.classList.add('text-red-400', 'border-red-100', 'bg-red-50');
-      btn.classList.remove('text-emerald-400');
-    }
-  }
-}
-
-function toggleEditorSocials() {
-  user.socials.visible = !user.socials.visible;
-  updateToggleButton('editorSocialsToggle', user.socials.visible);
-  renderSocials();
-}
-
-function toggleEditorPlatform(platform) {
-  user.socials[platform].visible = !user.socials[platform].visible;
-  updateToggleButton(`btn-${platform}`, user.socials[platform].visible);
-  renderSocials();
-}
-
-function saveSocials() {
-  user.socials.insta.val = document.getElementById('editInstaInput').value;
-  user.socials.twitter.val = document.getElementById('editTwitterInput').value;
-  user.socials.fb.val = document.getElementById('editFbInput').value;
-  localStorage.setItem('aestheticUser', JSON.stringify(user));
-  renderSocials();
-  document.getElementById('socialsEditPanel')?.classList.add('hidden');
-}
-
-function closeModal() {
-  if (window.history.state?.editorOpen) window.history.back();
-  else hideModalUI();
-}
-
-function togglePanel(id) {
-  const panel = document.getElementById(id);
-  const panels = ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel'];
-  if (panel && panel.classList.contains('hidden')) {
-    panels.forEach(p => document.getElementById(p)?.classList.add('hidden'));
-    panel.classList.remove('hidden');
-  } else {
-    panel?.classList.add('hidden');
-  }
-}
-
-function selectFont(fontClass) {
-  const target = document.querySelector('#modal .profile-text');
-  if (!target) return;
-  target.classList.remove('font-poppins', 'font-playfair', 'font-meow-script', 'font-pacifico', 'font-quicksand');
-  target.classList.add(fontClass);
-  setTimeout(adjustNameSize, 50);
-}
-
-function setTheme(alignment) {
-  const overlay = document.getElementById('profileOverlay');
-  overlay.classList.remove('theme-left', 'theme-right', 'theme-center');
-  overlay.classList.add('theme-' + alignment);
-  setTimeout(adjustNameSize, 50);
-}
-
-function updateProfileSize(val) {
-  const pic = document.getElementById('modalProfilePic');
-  pic.style.width = val + 'px';
-  pic.style.height = val + 'px';
-  document.getElementById('sizeValueDisplay').innerText = val + 'px';
-}
-
-function updateCardOpacity(val) {
-  currentOpacity = val / 100;
-  document.getElementById('opacityValueDisplay').innerText = val + '%';
-  const overlay = document.getElementById('profileOverlay');
-  overlay.style.background = `linear-gradient(to top, rgba(0,0,0,${currentOpacity}), rgba(0,0,0,${currentOpacity * 0.6})), url('${profileBackgrounds[currentBgIndex]}')`;
-  overlay.style.backgroundSize = 'cover';
-  overlay.style.backgroundPosition = 'center';
-}
-
-function changeProfileShape() {
-  currentShapeIndex = (currentShapeIndex + 1) % profileShapes.length;
-  const pic = document.getElementById('modalProfilePic');
-  pic.classList.remove('rounded-full', 'rounded-none', 'rounded-2xl');
-  pic.classList.add(profileShapes[currentShapeIndex]);
-}
-
-function applyFilter() {
-  currentFilterIndex = (currentFilterIndex + 1) % filters.length;
-  document.getElementById('modalImage').style.filter = filters[currentFilterIndex];
-}
-
-function changeProfileBackground() {
-  currentBgIndex = (currentBgIndex + 1) % profileBackgrounds.length;
-  const overlay = document.getElementById('profileOverlay');
-  overlay.style.background = `linear-gradient(to top, rgba(0,0,0,${currentOpacity}), rgba(0,0,0,${currentOpacity * 0.6})), url('${profileBackgrounds[currentBgIndex]}')`;
-  overlay.style.backgroundSize = 'cover';
-  overlay.style.backgroundPosition = 'center';
-}
-
-async function downloadPoster(scale, btn) {
-  const originalText = btn.innerHTML;
-  const originalClass = btn.className;
-  btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Saving...';
-  btn.classList.add('opacity-75', 'cursor-wait');
-  btn.disabled = true;
-
-  try {
-    const canvas = await window.html2canvas(document.getElementById('captureArea'), {
-      scale, useCORS: true, allowTaint: false, backgroundColor: null,
-      onclone: (clonedDoc) => {
-        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
-        const captureDiv = clonedDoc.getElementById('captureArea');
-        if (captureDiv) { captureDiv.style.border = 'none'; captureDiv.style.boxShadow = 'none'; captureDiv.style.borderRadius = '0'; }
-      }
-    });
-    const link = document.createElement('a');
-    link.download = `postbnao-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png', 1.0);
-    link.click();
-
-    btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
-    setTimeout(() => {
-      togglePanel('qualityPopup');
-      btn.innerHTML = originalText;
-      btn.className = originalClass;
-      btn.disabled = false;
-    }, 1000);
-  } catch (err) {
-    btn.innerHTML = '<i class="fas fa-times"></i> Error';
-    setTimeout(() => { btn.innerHTML = originalText; btn.className = originalClass; btn.disabled = false; }, 2000);
-  }
-}
-
-function editProfileText(id) {
-  activeEditId = id;
-  const input = document.getElementById('textEditInput');
-  input.value = document.getElementById(id).innerText;
-  document.getElementById('textEditPanel').classList.remove('hidden');
-  input.focus();
-}
-
-function saveProfileText() {
-  if (activeEditId) document.getElementById(activeEditId).innerText = document.getElementById('textEditInput').value;
-  document.getElementById('textEditPanel').classList.add('hidden');
-  if (activeEditId === 'modalProfileName') adjustNameSize();
-}
-
-function showDownloadOptions() { togglePanel('qualityPopup'); }
-
-function toggleEditProfilePopup() {
-  const modal = document.getElementById('userDetailsModal');
-  if (modal.classList.contains('hidden')) {
-    document.getElementById('userNameInput').value = user.name;
-    document.getElementById('professionInput').value = user.extra || "";
-    document.getElementById('mobileInput').value = user.contact || "";
-    document.getElementById('instaInput').value = user.socials?.insta?.val || "";
-    document.getElementById('twitterInput').value = user.socials?.twitter?.val || "";
-    document.getElementById('fbInput').value = user.socials?.fb?.val || "";
-    const followToggle = document.getElementById('setupSocialsToggle');
-    if (followToggle) followToggle.checked = user.socials?.visible ?? true;
-    modal.classList.remove('hidden');
-  } else {
-    modal.classList.add('hidden');
-  }
-}
-
-Object.assign(window, {
-  initManualCrop, saveUserSetup, toggleEditProfilePopup, closeModal, togglePanel,
-  selectFont, setTheme, updateProfileSize, updateCardOpacity, editProfileText,
-  editSocials, saveProfileText, toggleEditorSocials, toggleEditorPlatform, saveSocials,
-  cancelCrop, performCrop, showDownloadOptions, sharePoster, changeProfileShape,
-  applyFilter, changeProfileBackground, downloadPoster, openEditor,
-  shareFeedItem, downloadFeedItem, filterCategory, toggleFavorite,
-  setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote,
-  isProUser, requirePro, loginWithGoogle, logoutGoogle, openPricingModal,
-  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark, shareReferralOnWhatsApp,
-  triggerPendingShare, closeShareReadyModal
-});
