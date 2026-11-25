@@ -864,3 +864,405 @@ async function handleShareCanvas(canvas) {
 
 // Option C Check on Share: Agar user ne details nahi bhari toh pehle popup khulega!
 async function shareFeedItem(containerId, btn) {
+  if (!hasProfileSetup()) {
+    pendingUserAction = () => shareFeedItem(containerId, btn);
+    document.getElementById('userDetailsModal')?.classList.remove('hidden');
+    return;
+  }
+
+  const captureTarget = document.getElementById(containerId);
+  if (!captureTarget) return;
+
+  const originalIcon = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i>';
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-wait');
+  }
+
+  try {
+    const canvas = await window.html2canvas(captureTarget, {
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: false,
+      imageTimeout: 5000,
+      backgroundColor: null,
+      ignoreElements: (el) =>
+        (el.classList?.contains('gallery-item') && !el.contains(captureTarget)) ||
+        el.classList?.contains('capture-hide') ||
+        ['modal', 'pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
+      onclone: (clonedDoc) => {
+        const el = clonedDoc.getElementById(containerId);
+        if (el) {
+          el.style.borderRadius = '0';
+          el.style.border = 'none';
+          el.style.boxShadow = 'none';
+        }
+      }
+    });
+
+    await handleShareCanvas(canvas);
+  } catch (err) {
+    console.error('Share error:', err);
+    alert("Share karne me samasya aayi. Kripya Download button try karein.");
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      btn.classList.remove('opacity-75', 'cursor-wait');
+    }
+  }
+}
+
+async function sharePoster(btn) {
+  const captureArea = document.getElementById('captureArea');
+  if (!captureArea) return;
+
+  const originalIcon = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner animate-spin text-xs"></i>';
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-wait');
+  }
+
+  try {
+    const canvas = await window.html2canvas(captureArea, {
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: false,
+      imageTimeout: 5000,
+      backgroundColor: null,
+      ignoreElements: (el) =>
+        el.id === 'mainContent' ||
+        el.classList?.contains('capture-hide') ||
+        ['pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
+      onclone: (clonedDoc) => {
+        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
+        const captureDiv = clonedDoc.getElementById('captureArea');
+        if (captureDiv) {
+          captureDiv.style.border = 'none';
+          captureDiv.style.boxShadow = 'none';
+          captureDiv.style.borderRadius = '0';
+        }
+      }
+    });
+
+    await handleShareCanvas(canvas);
+  } catch (err) {
+    console.error('Share error:', err);
+    alert("Share karne me samasya aayi. Kripya Download button try karein.");
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      btn.classList.remove('opacity-75', 'cursor-wait');
+    }
+  }
+}
+
+function adjustNameSize() {
+  const nameEl = document.getElementById('modalProfileName');
+  if (!nameEl) return;
+  nameEl.style.fontSize = '20px';
+  let currentSize = 20;
+  while (nameEl.scrollWidth > nameEl.offsetWidth && currentSize > 10) {
+    currentSize -= 0.5;
+    nameEl.style.fontSize = `${currentSize}px`;
+  }
+}
+
+// Option C Check on Tap To Edit: Agar user ne details nahi bhari toh pehle popup khulega!
+function openEditor(src) {
+  if (!hasProfileSetup()) {
+    pendingUserAction = () => openEditor(src);
+    document.getElementById('userDetailsModal')?.classList.remove('hidden');
+    return;
+  }
+
+  const modal = document.getElementById('modal');
+  document.getElementById('modalImage').src = src;
+  document.getElementById('modalProfileName').innerText = user.name;
+  document.getElementById('modalProfileExtra').innerText = user.extra;
+  document.getElementById('modalProfileContact').innerText = user.contact;
+  document.getElementById('modalProfilePic').src = user.pic;
+  document.getElementById('posterQuoteBox')?.classList.add('hidden');
+  if (!isProUser()) {
+    hideWatermark = false;
+    document.getElementById('editorWatermark')?.classList.remove('hidden');
+  }
+
+  renderSocials();
+
+  const overlay = document.getElementById('profileOverlay');
+  const currentTheme = overlay.classList.contains('theme-right') ? 'right' : overlay.classList.contains('theme-center') ? 'center' : 'left';
+  setTheme(currentTheme);
+
+  const logoImg = document.getElementById('userLogoImg');
+  if (logoImg) logoImg.src = user.logo || SITE_LOGO_URL;
+
+  changeProfileBackground();
+  document.getElementById('cardOpacitySlider').value = currentOpacity * 100;
+  document.getElementById('opacityValueDisplay').innerText = Math.round(currentOpacity * 100) + '%';
+
+  modal.classList.remove('hidden');
+  document.getElementById('floatingButtonsContainer').classList.remove('hidden');
+  document.getElementById('bottom-nav').classList.add('hidden');
+  setTimeout(adjustNameSize, 50);
+  window.history.pushState({ editorOpen: true }, "");
+}
+
+function setTextColor(color) {
+  const overlay = document.getElementById('profileOverlay');
+  if (overlay) overlay.style.color = color;
+}
+
+function setPhotoRing(ringClass) {
+  const pic = document.getElementById('modalProfilePic');
+  if (!pic) return;
+  pic.classList.remove('ring-white', 'ring-gold', 'ring-emerald', 'ring-pink', 'ring-none');
+  pic.classList.add(ringClass);
+}
+
+function setCardLayout(layout) {
+  const overlay = document.getElementById('profileOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('card-style-overlay', 'card-style-pill', 'card-style-glass');
+  if (layout === 'overlay') overlay.classList.add('card-style-overlay');
+  if (layout === 'pill') overlay.classList.add('card-style-pill');
+  if (layout === 'glass') overlay.classList.add('card-style-glass');
+}
+
+function openQuotePanel() {
+  const currentQuote = document.getElementById('posterQuoteText')?.innerText || '';
+  document.getElementById('quoteInput').value = currentQuote;
+  togglePanel('quoteEditPanel');
+}
+
+function savePosterQuote() {
+  const val = document.getElementById('quoteInput').value.trim();
+  const box = document.getElementById('posterQuoteBox');
+  const textEl = document.getElementById('posterQuoteText');
+  if (val) {
+    textEl.innerText = val;
+    box.classList.remove('hidden');
+  } else {
+    box.classList.add('hidden');
+  }
+  document.getElementById('quoteEditPanel')?.classList.add('hidden');
+}
+
+function removePosterQuote() {
+  document.getElementById('posterQuoteText').innerText = '';
+  document.getElementById('posterQuoteBox')?.classList.add('hidden');
+  document.getElementById('quoteEditPanel')?.classList.add('hidden');
+}
+
+function renderSocials() {
+  const socialsContainer = document.getElementById('socialsContainer');
+  const mainSection = document.querySelector('#profileOverlay .social-media-section');
+  if (!mainSection) return;
+
+  const anyVisible = user.socials.insta.visible || user.socials.twitter.visible || user.socials.fb.visible;
+  if (!user.socials.visible || !anyVisible) {
+    mainSection.classList.add('hidden');
+    mainSection.style.display = 'none';
+  } else {
+    mainSection.classList.remove('hidden');
+    mainSection.style.display = '';
+  }
+
+  let itemsHTML = `<div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
+  [
+    { icon: 'fab fa-instagram', data: user.socials?.insta },
+    { icon: 'fab fa-twitter', data: user.socials?.twitter },
+    { icon: 'fab fa-facebook-f', data: user.socials?.fb }
+  ].forEach(p => {
+    if (!p.data?.visible) return;
+    itemsHTML += p.data.val
+      ? `<div class="info-row"><i class="${p.icon} fw-icon"></i> <span>${p.data.val}</span></div>`
+      : `<div class="info-row"><i class="${p.icon} opacity-60 fw-icon"></i></div>`;
+  });
+  itemsHTML += `</div>`;
+  socialsContainer.innerHTML = itemsHTML;
+}
+
+function editSocials() {
+  document.getElementById('editInstaInput').value = user.socials?.insta?.val || '';
+  document.getElementById('editTwitterInput').value = user.socials?.twitter?.val || '';
+  document.getElementById('editFbInput').value = user.socials?.fb?.val || '';
+  updateToggleButton('editorSocialsToggle', user.socials.visible);
+  updateToggleButton('btn-insta', user.socials.insta.visible);
+  updateToggleButton('btn-twitter', user.socials.twitter.visible);
+  updateToggleButton('btn-fb', user.socials.fb.visible);
+
+  ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel'].forEach(p => document.getElementById(p)?.classList.add('hidden'));
+  document.getElementById('socialsEditPanel')?.classList.remove('hidden');
+}
+
+function updateToggleButton(btnId, isVisible) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const icon = btn.querySelector('i');
+  if (isVisible) {
+    icon.className = 'fas fa-eye';
+    btn.classList.remove('text-red-400', 'border-red-100', 'bg-red-50');
+    if (btnId !== 'editorSocialsToggle') btn.classList.add('text-emerald-400');
+  } else {
+    icon.className = 'fas fa-eye-slash';
+    if (btnId !== 'editorSocialsToggle') {
+      btn.classList.add('text-red-400', 'border-red-100', 'bg-red-50');
+      btn.classList.remove('text-emerald-400');
+    }
+  }
+}
+
+function toggleEditorSocials() {
+  user.socials.visible = !user.socials.visible;
+  updateToggleButton('editorSocialsToggle', user.socials.visible);
+  renderSocials();
+}
+
+function toggleEditorPlatform(platform) {
+  user.socials[platform].visible = !user.socials[platform].visible;
+  updateToggleButton(`btn-${platform}`, user.socials[platform].visible);
+  renderSocials();
+}
+
+function saveSocials() {
+  user.socials.insta.val = document.getElementById('editInstaInput').value;
+  user.socials.twitter.val = document.getElementById('editTwitterInput').value;
+  user.socials.fb.val = document.getElementById('editFbInput').value;
+  localStorage.setItem('aestheticUser', JSON.stringify(user));
+  renderSocials();
+  document.getElementById('socialsEditPanel')?.classList.add('hidden');
+}
+
+function closeModal() {
+  if (window.history.state?.editorOpen) window.history.back();
+  else hideModalUI();
+}
+
+function togglePanel(id) {
+  const panel = document.getElementById(id);
+  const panels = ['fontListPanel', 'alignmentPanel', 'adjustmentsPanel', 'proStylePanel', 'quoteEditPanel', 'qualityPopup', 'textEditPanel', 'socialsEditPanel'];
+  if (panel && panel.classList.contains('hidden')) {
+    panels.forEach(p => document.getElementById(p)?.classList.add('hidden'));
+    panel.classList.remove('hidden');
+  } else {
+    panel?.classList.add('hidden');
+  }
+}
+
+function selectFont(fontClass) {
+  const target = document.querySelector('#modal .profile-text');
+  if (!target) return;
+  target.classList.remove('font-poppins', 'font-playfair', 'font-meow-script', 'font-pacifico', 'font-quicksand');
+  target.classList.add(fontClass);
+  setTimeout(adjustNameSize, 50);
+}
+
+function setTheme(alignment) {
+  const overlay = document.getElementById('profileOverlay');
+  overlay.classList.remove('theme-left', 'theme-right', 'theme-center');
+  overlay.classList.add('theme-' + alignment);
+  setTimeout(adjustNameSize, 50);
+}
+
+function updateProfileSize(val) {
+  const pic = document.getElementById('modalProfilePic');
+  pic.style.width = val + 'px';
+  pic.style.height = val + 'px';
+  document.getElementById('sizeValueDisplay').innerText = val + 'px';
+}
+
+function updateCardOpacity(val) {
+  currentOpacity = val / 100;
+  document.getElementById('opacityValueDisplay').innerText = val + '%';
+  const overlay = document.getElementById('profileOverlay');
+  overlay.style.background = `linear-gradient(to top, rgba(0,0,0,${currentOpacity}), rgba(0,0,0,${currentOpacity * 0.6})), url('${profileBackgrounds[currentBgIndex]}')`;
+  overlay.style.backgroundSize = 'cover';
+  overlay.style.backgroundPosition = 'center';
+}
+
+function changeProfileShape() {
+  currentShapeIndex = (currentShapeIndex + 1) % profileShapes.length;
+  const pic = document.getElementById('modalProfilePic');
+  pic.classList.remove('rounded-full', 'rounded-none', 'rounded-2xl');
+  pic.classList.add(profileShapes[currentShapeIndex]);
+}
+
+function applyFilter() {
+  currentFilterIndex = (currentFilterIndex + 1) % filters.length;
+  document.getElementById('modalImage').style.filter = filters[currentFilterIndex];
+}
+
+function changeProfileBackground() {
+  currentBgIndex = (currentBgIndex + 1) % profileBackgrounds.length;
+  const overlay = document.getElementById('profileOverlay');
+  overlay.style.background = `linear-gradient(to top, rgba(0,0,0,${currentOpacity}), rgba(0,0,0,${currentOpacity * 0.6})), url('${profileBackgrounds[currentBgIndex]}')`;
+  overlay.style.backgroundSize = 'cover';
+  overlay.style.backgroundPosition = 'center';
+}
+
+async function downloadPoster(scale, btn) {
+  const originalText = btn.innerHTML;
+  const originalClass = btn.className;
+  btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Saving...';
+  btn.classList.add('opacity-75', 'cursor-wait');
+  btn.disabled = true;
+
+  try {
+    const canvas = await window.html2canvas(document.getElementById('captureArea'), {
+      scale, useCORS: true, allowTaint: false, backgroundColor: null,
+      onclone: (clonedDoc) => {
+        clonedDoc.querySelectorAll('.capture-hide').forEach(el => el.style.display = 'none');
+        const captureDiv = clonedDoc.getElementById('captureArea');
+        if (captureDiv) { captureDiv.style.border = 'none'; captureDiv.style.boxShadow = 'none'; captureDiv.style.borderRadius = '0'; }
+      }
+    });
+    const link = document.createElement('a');
+    link.download = `postbnao-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+
+    btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+    setTimeout(() => {
+      togglePanel('qualityPopup');
+      btn.innerHTML = originalText;
+      btn.className = originalClass;
+      btn.disabled = false;
+    }, 1000);
+  } catch (err) {
+    btn.innerHTML = '<i class="fas fa-times"></i> Error';
+    setTimeout(() => { btn.innerHTML = originalText; btn.className = originalClass; btn.disabled = false; }, 2000);
+  }
+}
+
+function editProfileText(id) {
+  activeEditId = id;
+  const input = document.getElementById('textEditInput');
+  input.value = document.getElementById(id).innerText;
+  document.getElementById('textEditPanel').classList.remove('hidden');
+  input.focus();
+}
+
+function saveProfileText() {
+  if (activeEditId) document.getElementById(activeEditId).innerText = document.getElementById('textEditInput').value;
+  document.getElementById('textEditPanel').classList.add('hidden');
+  if (activeEditId === 'modalProfileName') adjustNameSize();
+}
+
+function showDownloadOptions() { togglePanel('qualityPopup'); }
+
+Object.assign(window, {
+  initManualCrop, saveUserSetup, closeModal, togglePanel,
+  selectFont, setTheme, updateProfileSize, updateCardOpacity, editProfileText,
+  editSocials, saveProfileText, toggleEditorSocials, toggleEditorPlatform, saveSocials,
+  cancelCrop, performCrop, showDownloadOptions, sharePoster, changeProfileShape,
+  applyFilter, changeProfileBackground, downloadPoster, openEditor,
+  shareFeedItem, downloadFeedItem, filterCategory, toggleFavorite,
+  setTextColor, setPhotoRing, setCardLayout, openQuotePanel, savePosterQuote, removePosterQuote,
+  isProUser, requirePro, loginWithGoogle, logoutGoogle, openPricingModal,
+  closePricingModal, selectPlan, startInstamojoPayment, toggleWatermark, shareReferralOnWhatsApp,
+  triggerPendingShare, closeShareReadyModal, closeUserSetupModal
+});
