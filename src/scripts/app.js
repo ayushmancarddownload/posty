@@ -7,7 +7,7 @@ const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
 const FREE_LAUNCH_MODE = false;
 
-// === 2. SABSE PEHLE: URL se Referral Param capture karein (Bina kisi delay ke) ===
+// URL se Referral Param capture karein
 function captureReferralParam() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -33,6 +33,9 @@ let activeCategory = 'All';
 let favoriteUrls = JSON.parse(localStorage.getItem('postyFavorites') || '[]');
 let pendingShareFile = null;
 let pendingUserAction = null;
+
+// SWIPE DETECTION FLAG (Swiping ke dauran edit modal na khule)
+let didHorizontalSwipe = false;
 
 let user = {
   name: "Aesthetic Creator",
@@ -60,6 +63,18 @@ const profileBackgrounds = [
   "https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?auto=format&fit=crop&q=80&w=400",
   "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?auto=format&fit=crop&q=80&w=400",
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=400"
+];
+
+// SWIPE STYLE COMBINATIONS (Left / Right slide karne par yeh cycle honge)
+const SWIPE_STYLE_PRESETS = [
+  { theme: 'theme-left', font: 'font-poppins', bg: profileBackgrounds[0] },
+  { theme: 'theme-center', font: 'font-playfair', bg: profileBackgrounds[1] },
+  { theme: 'theme-right', font: 'font-pacifico', bg: profileBackgrounds[2] },
+  { theme: 'theme-left', font: 'font-quicksand', bg: profileBackgrounds[3] },
+  { theme: 'theme-center', font: 'font-meow-script', bg: profileBackgrounds[4] },
+  { theme: 'theme-right', font: 'font-poppins', bg: profileBackgrounds[5] },
+  { theme: 'theme-center', font: 'font-quicksand', bg: profileBackgrounds[0] },
+  { theme: 'theme-left', font: 'font-playfair', bg: profileBackgrounds[2] }
 ];
 
 const profileShapes = ['rounded-full', 'rounded-none', 'rounded-2xl'];
@@ -128,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   startApp();
+  initSwipeGestureDetection(); // Swipe Gestures Setup
 
   document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
   document.getElementById('updateProfilePicInput')?.addEventListener('change', handleFileSelect);
@@ -137,6 +153,129 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategories();
   loadFeed();
 });
+
+// === HORIZONTAL SWIPE GESTURE DETECTION ===
+function initSwipeGestureDetection() {
+  const gallery = document.getElementById('gallery');
+  if (!gallery) return;
+
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  let targetCard = null;
+  let isPointerDown = false;
+
+  // Touch on Mobile
+  gallery.addEventListener('touchstart', (e) => {
+    const card = e.target.closest('.poster-capture-area');
+    if (!card) return;
+    targetCard = card;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    didHorizontalSwipe = false;
+  }, { passive: true });
+
+  gallery.addEventListener('touchend', (e) => {
+    if (!targetCard) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    handleSwipeEnd(startX, startY, endX, endY, startTime, targetCard);
+    targetCard = null;
+  }, { passive: true });
+
+  // Mouse Drag on PC (For Testing)
+  gallery.addEventListener('mousedown', (e) => {
+    const card = e.target.closest('.poster-capture-area');
+    if (!card) return;
+    targetCard = card;
+    startX = e.clientX;
+    startY = e.clientY;
+    startTime = Date.now();
+    isPointerDown = true;
+    didHorizontalSwipe = false;
+  });
+
+  gallery.addEventListener('mouseup', (e) => {
+    if (!isPointerDown || !targetCard) return;
+    isPointerDown = false;
+    handleSwipeEnd(startX, startY, e.clientX, e.clientY, startTime, targetCard);
+    targetCard = null;
+  });
+}
+
+function handleSwipeEnd(sx, sy, ex, ey, st, card) {
+  const diffX = ex - sx;
+  const diffY = ey - sy;
+  const elapsed = Date.now() - st;
+
+  // Agar horizontal swipe 35px se zyada ho aur vertical se zyada horizontal move hua ho
+  if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) && elapsed < 600) {
+    didHorizontalSwipe = true;
+    const direction = diffX < 0 ? 'next' : 'prev';
+    cycleFeedStyle(card, direction);
+    
+    // 250ms baad swipe flag reset karein taaki regular click normal chale
+    setTimeout(() => { didHorizontalSwipe = false; }, 250);
+  }
+}
+
+function cycleFeedStyle(card, direction) {
+  let currentIndex = parseInt(card.dataset.styleIndex || '0', 10);
+  if (direction === 'next') {
+    currentIndex = (currentIndex + 1) % SWIPE_STYLE_PRESETS.length;
+  } else {
+    currentIndex = (currentIndex - 1 + SWIPE_STYLE_PRESETS.length) % SWIPE_STYLE_PRESETS.length;
+  }
+  card.dataset.styleIndex = currentIndex;
+
+  const preset = SWIPE_STYLE_PRESETS[currentIndex];
+  const overlay = card.querySelector('.poster-overlay-container');
+  const textBlock = card.querySelector('.profile-text');
+
+  if (overlay) {
+    overlay.classList.add('swipe-animating');
+
+    // 1. Theme Change (Left, Center, Right Alignment)
+    overlay.classList.remove('theme-left', 'theme-center', 'theme-right');
+    overlay.classList.add(preset.theme);
+
+    // 2. Background Banner & Darkness Change
+    overlay.style.background = `linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${preset.bg}')`;
+    overlay.style.backgroundSize = 'cover';
+    overlay.style.backgroundPosition = 'center';
+
+    // 3. Typography Font Change
+    if (textBlock) {
+      textBlock.classList.remove('font-poppins', 'font-playfair', 'font-meow-script', 'font-pacifico', 'font-quicksand');
+      textBlock.classList.add(preset.font);
+    }
+
+    setTimeout(() => {
+      overlay.classList.remove('swipe-animating');
+    }, 150);
+  }
+
+  // Floating Micro Badge Feedback
+  showSwipeFeedback(card, preset.theme.replace('theme-', '').toUpperCase());
+}
+
+function showSwipeFeedback(card, themeName) {
+  let badge = card.querySelector('.swipe-feedback-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.className = 'swipe-feedback-badge absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/60 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md pointer-events-none transition-all duration-300 opacity-0 z-40';
+    card.appendChild(badge);
+  }
+  badge.innerHTML = `<i class="fas fa-magic text-yellow-300 mr-1"></i> ${themeName} Style`;
+  badge.style.opacity = '1';
+  badge.style.transform = 'translate(-50%, -50%) scale(1.05)';
+
+  setTimeout(() => {
+    badge.style.opacity = '0';
+    badge.style.transform = 'translate(-50%, -50%) scale(0.95)';
+  }, 650);
+}
 
 function hasProfileSetup() {
   const saved = localStorage.getItem('aestheticUser');
@@ -198,7 +337,6 @@ async function fetchReferralCount(myUid) {
     if (textEl) textEl.innerText = `${Math.min(total, 10)} / 10`;
     if (barEl) barEl.style.width = `${Math.min(100, (total / 10) * 100)}%`;
 
-    // Milestone 1 (2 Friends = 7 Days)
     const m1 = document.getElementById('milestone-box-1');
     const mb1 = document.getElementById('milestone-badge-1');
     if (total >= 2) {
@@ -206,7 +344,6 @@ async function fetchReferralCount(myUid) {
       if (mb1) { mb1.innerText = '✅ UNLOCKED'; mb1.className = 'text-[8px] font-bold text-emerald-700 block mt-0.5'; }
     }
 
-    // Milestone 2 (5 Friends = 30 Days)
     const m2 = document.getElementById('milestone-box-2');
     const mb2 = document.getElementById('milestone-badge-2');
     if (total >= 5) {
@@ -214,7 +351,6 @@ async function fetchReferralCount(myUid) {
       if (mb2) { mb2.innerText = '✅ UNLOCKED'; mb2.className = 'text-[8px] font-bold text-teal-700 block mt-0.5'; }
     }
 
-    // Milestone 3 (10 Friends = 90 Days)
     const m3 = document.getElementById('milestone-box-3');
     const mb3 = document.getElementById('milestone-badge-3');
     if (total >= 10) {
@@ -709,22 +845,17 @@ function loadFeed() {
   gallery.innerHTML = '';
 
   displayList.forEach((item, index) => {
-    const themes = ['theme-left', 'theme-center', 'theme-right'];
-    const randomTheme = themes[Math.floor(Math.random() * themes.length)];
-    const randomBg = profileBackgrounds[Math.floor(Math.random() * profileBackgrounds.length)];
-    const randomFont = fonts[Math.floor(Math.random() * fonts.length)];
-
     const div = document.createElement('div');
     div.className = 'gallery-item';
     div.id = `feed-item-${index}`;
-    div.innerHTML = getPosterHTML(item.url, item.category, randomTheme, randomBg, randomFont, index);
+    div.innerHTML = getPosterHTML(item.url, item.category, index);
     gallery.appendChild(div);
   });
 
   document.getElementById('loadingGallery')?.classList.add('hidden');
 }
 
-function getPosterHTML(url, category, theme, bg, fontClass, index) {
+function getPosterHTML(url, category, index) {
   let socialsHTML = '';
   if (user.socials.visible) {
     const anyVisible = user.socials.insta.visible || user.socials.twitter.visible || user.socials.fb.visible;
@@ -744,23 +875,34 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
   }
 
   const isFav = favoriteUrls.includes(url);
+  // Default Style: preset 0
+  const defaultPreset = SWIPE_STYLE_PRESETS[index % SWIPE_STYLE_PRESETS.length];
 
   return `
     <div class="poster-card-wrapper relative">
-      <div id="print-area-${index}" class="poster-capture-area relative w-full" onclick="openEditor('${url}')">
+      <div id="print-area-${index}" data-style-index="${index % SWIPE_STYLE_PRESETS.length}" class="poster-capture-area relative w-full" onclick="openEditor('${url}')">
+        
+        <!-- Image Container -->
         <div class="relative w-full h-full">
           <img src="${url}" loading="lazy" class="main-img w-full block" alt="${category}" crossorigin="anonymous">
           <img src="${user.logo || SITE_LOGO_URL}" class="absolute top-2 right-2 w-10 h-10 object-contain drop-shadow-xl z-30" crossorigin="anonymous">
           <div class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full">
             <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.2em] uppercase">postbnao.com</span>
           </div>
+
+          <!-- Subtle Swipe Hint on Top -->
+          <div class="absolute bottom-1 right-2 z-20 pointer-events-none opacity-40 text-[8px] text-white font-bold flex items-center gap-1">
+            <span>👈 Slide Style 👉</span>
+          </div>
         </div>
-        <div class="poster-overlay-container ${theme}" style="background: linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${bg}');">
+
+        <!-- Dynamic Swipeable Overlay Container -->
+        <div class="poster-overlay-container ${defaultPreset.theme}" style="background: linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${defaultPreset.bg}');">
           <div class="profile-group">
             <div class="profile-pic-container shrink-0">
               <img src="${user.pic}" crossorigin="anonymous" class="w-14 h-14 rounded-full border-2 border-white/60 shadow-lg object-cover bg-white">
             </div>
-            <div class="profile-text flex flex-col justify-center ${fontClass || ''}">
+            <div class="profile-text flex flex-col justify-center ${defaultPreset.font}">
               <h3 class="modal-profile-name font-bold text-lg leading-none drop-shadow-md mb-1">${user.name}</h3>
               <div class="details-block">
                 <div class="info-row"><i class="fas fa-briefcase fw-icon"></i> ${user.extra}</div>
@@ -783,6 +925,7 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
           <button onclick="shareFeedItem('print-area-${index}', this)" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="fab fa-whatsapp"></i>
           </button>
+          <!-- Feed Download (LOCKED 👑) -->
           <button onclick="requirePro(() => downloadFeedItem('print-area-${index}', this))" class="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
             <i class="fas fa-download"></i>
             <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
@@ -901,6 +1044,7 @@ async function shareFeedItem(containerId, btn) {
       ignoreElements: (el) =>
         (el.classList?.contains('gallery-item') && !el.contains(captureTarget)) ||
         el.classList?.contains('capture-hide') ||
+        el.classList?.contains('swipe-feedback-badge') ||
         ['modal', 'pricingModal', 'userDetailsModal', 'shareReadyModal'].includes(el.id),
       onclone: (clonedDoc) => {
         const el = clonedDoc.getElementById(containerId);
@@ -983,6 +1127,12 @@ function adjustNameSize() {
 }
 
 function openEditor(src) {
+  // Agar swipe chal raha tha toh editor na kholein!
+  if (didHorizontalSwipe) {
+    didHorizontalSwipe = false;
+    return;
+  }
+
   if (!hasProfileSetup()) {
     pendingUserAction = () => openEditor(src);
     document.getElementById('userDetailsModal')?.classList.remove('hidden');

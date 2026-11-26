@@ -60,7 +60,7 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* REELS LAYOUT */
+/* REELS VERTICAL SNAP SCROLL */
 #mainContent {
   height: 100vh;
   width: 100%;
@@ -95,12 +95,15 @@ body {
   margin-bottom: 0;
 }
 
+/* TOUCH PAN-Y: Vertical scroll aaram se chalega, aur horizontal swipe detect hoga */
 .poster-capture-area {
   width: 100%;
   max-width: 400px;
   border-radius: 0;
   overflow: hidden;
   position: relative;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .gallery-item img.main-img {
@@ -111,6 +114,7 @@ body {
   height: auto;
   max-height: 55vh;
   object-fit: cover;
+  pointer-events: none; /* Image drag block karta hai taaki smooth swipe ho */
 }
 
 .poster-actions-area {
@@ -147,29 +151,13 @@ body {
   z-index: 10;
   background-size: cover;
   background-position: center;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, transform 0.15s ease;
 }
 
-/* PRO CARD LAYOUT PRESETS */
-.card-style-overlay {
-  position: absolute !important;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0)) !important;
-  padding-top: 1.75rem !important;
-}
-
-.card-style-pill {
-  margin: 8px;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-}
-
-.card-style-glass {
-  background: rgba(15, 23, 42, 0.65) !important;
-  border-top: 2px solid rgba(255, 255, 255, 0.35);
+/* SWIPE MICRO ANIMATION */
+.swipe-animating {
+  transform: scale(0.96);
+  opacity: 0.85;
 }
 
 /* PRO PHOTO FRAME RINGS */
