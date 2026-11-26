@@ -12,6 +12,30 @@ body {
   overflow: hidden;
   margin: 0;
   overscroll-behavior-y: contain;
+  /* Anti-Copy / Long-Press Save Block */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Inputs me type karne ki permission rakhein */
+input, textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
+img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+/* Print / Ctrl+P / Save as PDF Block */
+@media print {
+  html, body {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -95,7 +119,6 @@ body {
   margin-bottom: 0;
 }
 
-/* TOUCH PAN-Y: Vertical scroll aaram se chalega, aur horizontal swipe detect hoga */
 .poster-capture-area {
   width: 100%;
   max-width: 400px;
@@ -114,7 +137,7 @@ body {
   height: auto;
   max-height: 55vh;
   object-fit: cover;
-  pointer-events: none; /* Image drag block karta hai taaki smooth swipe ho */
+  pointer-events: none;
 }
 
 .poster-actions-area {
@@ -154,13 +177,11 @@ body {
   transition: background 0.3s ease, transform 0.15s ease;
 }
 
-/* SWIPE MICRO ANIMATION */
 .swipe-animating {
   transform: scale(0.96);
   opacity: 0.85;
 }
 
-/* PRO PHOTO FRAME RINGS */
 .ring-white { border: 3px solid #ffffff !important; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
 .ring-gold { border: 3px solid #fbbf24 !important; box-shadow: 0 0 12px rgba(251, 191, 36, 0.7); }
 .ring-emerald { border: 3px solid #34d399 !important; box-shadow: 0 0 12px rgba(52, 211, 153, 0.6); }

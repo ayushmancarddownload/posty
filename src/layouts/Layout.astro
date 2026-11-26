@@ -9,8 +9,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Supabase JS SDK v2 -->
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>{title}</title>
@@ -32,8 +30,116 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
 
   <!-- Aesthetic Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Meow+Script&family=Pacifico&family=Quicksand:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS SDK v2 -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="text-gray-800">
   <slot />
+
+  <!-- Anti-Screenshot Black Shield Overlay -->
+  <div id="screenshotShield" class="fixed inset-0 bg-black/95 backdrop-blur-2xl z-[9999] hidden flex-col items-center justify-center text-white text-center p-6 select-none">
+    <div class="w-16 h-16 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-3xl mb-3 border border-red-500/40">
+      <i class="fas fa-shield-alt"></i>
+    </div>
+    <h2 class="text-lg font-bold">Screenshot Allowed Nahi Hai 🔒</h2>
+    <p class="text-xs text-gray-300 mt-1 max-w-xs">Security ke liye screen hide kar di gayi hai. Clean HD poster ke liye Download ya Share button use karein.</p>
+  </div>
+
+  <!-- Anti-Screenshot & Copy Protection Script -->
+  <script is:inline>
+    (function () {
+      const shield = document.getElementById('screenshotShield');
+      let shieldTimer = null;
+      let bypassBlurUntil = 0;
+
+      function showShield(autoHideMs) {
+        if (!shield || Date.now() < bypassBlurUntil) return;
+        shield.classList.remove('hidden');
+        shield.classList.add('flex');
+        if (autoHideMs) {
+          clearTimeout(shieldTimer);
+          shieldTimer = setTimeout(hideShield, autoHideMs);
+        }
+      }
+
+      function hideShield() {
+        if (!shield) return;
+        shield.classList.add('hidden');
+        shield.classList.remove('flex');
+      }
+
+      // Photo upload ya share dabate waqt shield ko disturb na karne dein
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('input[type="file"]') || e.target.closest('[onclick*="share"]')) {
+          bypassBlurUntil = Date.now() + 8000;
+        }
+      }, true);
+
+      // 1. Right-Click & Mobile Long-Press Menu Block (Input/Textarea ko chhodkar)
+      document.addEventListener('contextmenu', (e) => {
+        if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+          e.preventDefault();
+        }
+      });
+
+      // 2. Image Dragging Block
+      document.addEventListener('dragstart', (e) => {
+        if (e.target.tagName === 'IMG') e.preventDefault();
+      });
+
+      // 3. Keyboard Screenshot, Print, Save, DevTools Block
+      function handleKey(e) {
+        const key = (e.key || '').toLowerCase();
+
+        // PrintScreen button
+        if (e.key === 'PrintScreen' || e.keyCode === 44) {
+          e.preventDefault();
+          showShield(2500);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText('Screenshot protected by postbnao.com').catch(() => {});
+          }
+          return false;
+        }
+
+        // Ctrl+S, Ctrl+P, Ctrl+U
+        if ((e.ctrlKey || e.metaKey) && ['s', 'p', 'u'].includes(key)) {
+          e.preventDefault();
+          showShield(1500);
+          return false;
+        }
+
+        // Snipping Tool (Win+Shift+S / Cmd+Shift+3/4/5) ya DevTools (F12, Ctrl+Shift+I/J/C)
+        if (
+          e.key === 'F12' ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && ['s', 'i', 'j', 'c', '3', '4', '5'].includes(key))
+        ) {
+          e.preventDefault();
+          showShield(2000);
+          return false;
+        }
+      }
+
+      window.addEventListener('keydown', handleKey);
+      window.addEventListener('keyup', handleKey);
+
+      // 4. Tab / App Switch / Windows Snipping Tool Focus Loss par Screen Hide
+      window.addEventListener('blur', () => {
+        if (!window.location.pathname.includes('/admin')) {
+          showShield();
+        }
+      });
+
+      window.addEventListener('focus', hideShield);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && !window.location.pathname.includes('/admin')) {
+          showShield();
+        } else {
+          hideShield();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
