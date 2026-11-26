@@ -95,20 +95,15 @@
         <img id="modalImage" class="w-full h-auto block" src="" crossorigin="anonymous" />
         <img id="userLogoImg" class="absolute top-2 right-2 w-12 h-12 object-contain drop-shadow-xl z-30 transition-all duration-300" src="" crossorigin="anonymous" alt="Logo" />
 
-        <!-- Optional Quote Overlay on Poster (Locked for Pro) -->
+        <!-- Optional Quote Overlay on Poster -->
         <div id="posterQuoteBox" onclick="requirePro(() => openQuotePanel())" class="hidden absolute inset-x-4 top-1/2 -translate-y-1/2 z-30 text-center cursor-pointer">
           <p id="posterQuoteText" class="text-white font-bold text-base sm:text-lg px-4 py-2.5 rounded-2xl bg-black/50 drop-shadow-lg inline-block leading-snug"></p>
         </div>
-
-        <!-- Watermark -->
-        <div id="editorWatermark" class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full">
-          <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.3em] uppercase drop-shadow-md">postbnao.com</span>
-        </div>
       </div>
 
+      <!-- Profile Card -->
       <div id="profileOverlay" class="poster-overlay-container theme-left" style="background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.6));">
         <div class="profile-group">
-          <!-- Profile Pic & Crop Locked for Pro -->
           <div class="profile-pic-container relative cursor-pointer group" onclick="requirePro(() => document.getElementById('updateProfilePicInput').click())" title="Change Picture">
             <img id="modalProfilePic" crossorigin="anonymous" class="w-16 h-16 rounded-full ring-white shadow-xl object-cover" style="width: 80px; height: 80px;" />
             <div class="capture-hide absolute inset-0 flex items-center justify-center bg-black/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -119,7 +114,6 @@
             </button>
           </div>
 
-          <!-- Profile Text Edits Locked for Pro -->
           <div class="profile-text transition-all duration-300 flex flex-col">
             <h3 class="modal-profile-name font-bold text-xl drop-shadow-md cursor-pointer mb-1" id="modalProfileName" onclick="requirePro(() => editProfileText('modalProfileName'))">Name</h3>
             <div class="details-block">
@@ -135,13 +129,17 @@
           </div>
         </div>
 
-        <!-- Social Media Edit Locked for Pro -->
         <div class="social-media-section social-group cursor-pointer hover:opacity-80 transition" onclick="requirePro(() => editSocials())">
           <p class="text-[8px] font-bold opacity-80 uppercase tracking-widest mb-0.5 flex items-center gap-1">
             Follow Me <i class="fas fa-pen text-[8px] opacity-50 capture-hide"></i>
           </p>
           <div id="socialsContainer" class="social-inner-block flex flex-col gap-0.5 text-[10px] font-medium opacity-90"></div>
         </div>
+      </div>
+
+      <!-- NEW: Watermark Profile ke Niche (Chhota Clean Text) -->
+      <div id="editorWatermark" class="w-full bg-neutral-950 text-white/80 text-center py-1 px-2 border-t border-white/10">
+        <span class="text-[9px] font-quicksand font-semibold tracking-wider">Made with postbnao.com</span>
       </div>
     </div>
     <div class="h-40 w-full"></div>
@@ -227,78 +225,66 @@
   </div>
 </div>
 
-<!-- Floating Action Buttons: ALL EDIT & DOWNLOAD BUTTONS LOCKED FOR PRO -->
+<!-- Floating Action Buttons -->
 <div id="floatingButtonsContainer" class="fixed bottom-6 left-0 right-0 z-[110] px-3 hidden">
   <div class="bg-emerald-50/95 backdrop-blur-md p-2.5 rounded-[2.5rem] shadow-2xl max-w-lg mx-auto border border-emerald-100">
     <div class="floating-bar-wrap">
-      <!-- Download (LOCKED 👑) -->
       <button onclick="requirePro(() => showDownloadOptions())" class="relative w-8 h-8 bg-gradient-to-tr from-emerald-500 to-teal-500 text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Save Image">
         <i class="fas fa-download text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- WhatsApp Share (Free Viral Engine) -->
       <button onclick="sharePoster(this)" class="w-8 h-8 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 transition flex items-center justify-center" title="Share on WhatsApp">
         <i class="fab fa-whatsapp text-sm"></i>
       </button>
 
       <div class="w-px h-6 bg-emerald-200 mx-0.5"></div>
 
-      <!-- Pro Styles (LOCKED 👑) -->
       <button onclick="requirePro(() => togglePanel('proStylePanel'))" class="relative w-8 h-8 bg-amber-100 text-amber-600 rounded-full border border-amber-200 hover:bg-amber-200 transition" title="Pro Colors & Frames">
         <i class="fas fa-palette text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Add Quote (LOCKED 👑) -->
       <button onclick="requirePro(() => openQuotePanel())" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Add Quote">
         <i class="fas fa-quote-right text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Watermark Remove (LOCKED 👑) -->
       <button onclick="requirePro(() => toggleWatermark())" class="relative w-8 h-8 bg-rose-100 text-rose-600 rounded-full border border-rose-200 hover:bg-rose-200 transition" title="Remove Watermark">
         <i class="fas fa-tint-slash text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Typography Fonts (LOCKED 👑) -->
       <button onclick="requirePro(() => togglePanel('fontListPanel'))" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Fonts">
         <i class="fas fa-font text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Alignment (LOCKED 👑) -->
       <button onclick="requirePro(() => togglePanel('alignmentPanel'))" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Alignment">
         <i class="fas fa-arrows-alt-h text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Adjustments Size & Darkness (LOCKED 👑) -->
       <button onclick="requirePro(() => togglePanel('adjustmentsPanel'))" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Size & Darkness">
         <i class="fas fa-sliders-h text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Socials (LOCKED 👑) -->
       <button onclick="requirePro(() => editSocials())" class="relative w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full border border-emerald-200 hover:bg-emerald-200 transition" title="Socials">
         <i class="fas fa-users text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Shape (LOCKED 👑) -->
       <button onclick="requirePro(() => changeProfileShape())" class="relative w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Shape">
         <i class="fas fa-shapes text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Filters (LOCKED 👑) -->
       <button onclick="requirePro(() => applyFilter())" class="relative w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Filters">
         <i class="fas fa-wand-sparkles text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
       </button>
 
-      <!-- Banner Background (LOCKED 👑) -->
       <button onclick="requirePro(() => changeProfileBackground())" class="relative w-8 h-8 bg-teal-100 text-teal-600 rounded-full border border-teal-200 hover:bg-teal-200 transition" title="Banner">
         <i class="fas fa-image text-xs"></i>
         <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
@@ -307,7 +293,7 @@
   </div>
 </div>
 
-<!-- Quality Selector (BOTH SD & 4K LOCKED 👑) -->
+<!-- Quality Selector -->
 <div id="qualityPopup" class="fixed inset-0 bg-emerald-900/60 backdrop-blur-sm z-[220] hidden flex items-center justify-center p-4">
   <div class="cute-card p-8 w-full max-w-xs text-center shadow-2xl border border-emerald-100">
     <h3 class="text-xl font-bold mb-6 italic text-emerald-600">Export Options ✨</h3>
@@ -323,7 +309,7 @@
   </div>
 </div>
 
-<!-- Share Ready Modal (Jab phone browser par 5 sec timer expire ho) -->
+<!-- Share Ready Modal -->
 <div id="shareReadyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[360] hidden flex items-center justify-center p-4">
   <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl border border-emerald-100">
     <div class="w-12 h-12 bg-emerald-100 text-[#25D366] rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">

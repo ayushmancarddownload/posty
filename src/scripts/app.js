@@ -7,7 +7,6 @@ const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
 const FREE_LAUNCH_MODE = false;
 
-// URL se Referral Param capture karein
 function captureReferralParam() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -33,8 +32,6 @@ let activeCategory = 'All';
 let favoriteUrls = JSON.parse(localStorage.getItem('postyFavorites') || '[]');
 let pendingShareFile = null;
 let pendingUserAction = null;
-
-// SWIPE DETECTION FLAG (Swiping ke dauran edit modal na khule)
 let didHorizontalSwipe = false;
 
 let user = {
@@ -65,7 +62,6 @@ const profileBackgrounds = [
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=400"
 ];
 
-// SWIPE STYLE COMBINATIONS (Left / Right slide karne par yeh cycle honge)
 const SWIPE_STYLE_PRESETS = [
   { theme: 'theme-left', font: 'font-poppins', bg: profileBackgrounds[0] },
   { theme: 'theme-center', font: 'font-playfair', bg: profileBackgrounds[1] },
@@ -81,7 +77,6 @@ const profileShapes = ['rounded-full', 'rounded-none', 'rounded-2xl'];
 const filters = ['', 'grayscale(100%)', 'sepia(80%)', 'contrast(150%)', 'hue-rotate(45deg)'];
 const fonts = ['font-poppins', 'font-playfair', 'font-meow-script', 'font-pacifico', 'font-quicksand'];
 
-// Supabase Initialize
 if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")) {
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -143,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   startApp();
-  initSwipeGestureDetection(); // Swipe Gestures Setup
+  initSwipeGestureDetection();
 
   document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
   document.getElementById('updateProfilePicInput')?.addEventListener('change', handleFileSelect);
@@ -154,7 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFeed();
 });
 
-// === HORIZONTAL SWIPE GESTURE DETECTION ===
 function initSwipeGestureDetection() {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
@@ -165,7 +159,6 @@ function initSwipeGestureDetection() {
   let targetCard = null;
   let isPointerDown = false;
 
-  // Touch on Mobile
   gallery.addEventListener('touchstart', (e) => {
     const card = e.target.closest('.poster-capture-area');
     if (!card) return;
@@ -184,7 +177,6 @@ function initSwipeGestureDetection() {
     targetCard = null;
   }, { passive: true });
 
-  // Mouse Drag on PC (For Testing)
   gallery.addEventListener('mousedown', (e) => {
     const card = e.target.closest('.poster-capture-area');
     if (!card) return;
@@ -209,13 +201,10 @@ function handleSwipeEnd(sx, sy, ex, ey, st, card) {
   const diffY = ey - sy;
   const elapsed = Date.now() - st;
 
-  // Agar horizontal swipe 35px se zyada ho aur vertical se zyada horizontal move hua ho
   if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) && elapsed < 600) {
     didHorizontalSwipe = true;
     const direction = diffX < 0 ? 'next' : 'prev';
     cycleFeedStyle(card, direction);
-    
-    // 250ms baad swipe flag reset karein taaki regular click normal chale
     setTimeout(() => { didHorizontalSwipe = false; }, 250);
   }
 }
@@ -235,17 +224,13 @@ function cycleFeedStyle(card, direction) {
 
   if (overlay) {
     overlay.classList.add('swipe-animating');
-
-    // 1. Theme Change (Left, Center, Right Alignment)
     overlay.classList.remove('theme-left', 'theme-center', 'theme-right');
     overlay.classList.add(preset.theme);
 
-    // 2. Background Banner & Darkness Change
     overlay.style.background = `linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${preset.bg}')`;
     overlay.style.backgroundSize = 'cover';
     overlay.style.backgroundPosition = 'center';
 
-    // 3. Typography Font Change
     if (textBlock) {
       textBlock.classList.remove('font-poppins', 'font-playfair', 'font-meow-script', 'font-pacifico', 'font-quicksand');
       textBlock.classList.add(preset.font);
@@ -256,7 +241,6 @@ function cycleFeedStyle(card, direction) {
     }, 150);
   }
 
-  // Floating Micro Badge Feedback
   showSwipeFeedback(card, preset.theme.replace('theme-', '').toUpperCase());
 }
 
@@ -287,7 +271,6 @@ function closeUserSetupModal() {
   document.getElementById('userDetailsModal')?.classList.add('hidden');
 }
 
-// === CLAIM REFERRAL (Direct Database RPC) ===
 async function claimPendingReferral(myUid) {
   const referrerId = localStorage.getItem('posty_ref');
   if (!referrerId || referrerId === myUid) {
@@ -301,12 +284,10 @@ async function claimPendingReferral(myUid) {
     });
 
     if (error) {
-      console.warn('Referral RPC error:', error.message);
       if (error.message.includes('Already referred') || error.message.includes('not found') || error.message.includes('Self referral')) {
         localStorage.removeItem('posty_ref');
       }
     } else if (data) {
-      console.log('Referral claim result:', data);
       if (data.success || data.error === 'Already referred') {
         localStorage.removeItem('posty_ref');
       }
@@ -324,10 +305,7 @@ async function fetchReferralCount(myUid) {
       .select('*', { count: 'exact', head: true })
       .eq('referrer_id', myUid);
 
-    if (error) {
-      console.warn('Fetch referrals error:', error.message);
-      return;
-    }
+    if (error) return;
 
     const total = count || 0;
     const textEl = document.getElementById('refCountText');
@@ -382,7 +360,6 @@ async function shareReferralOnWhatsApp() {
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-// === AUTH & SUBSCRIPTION ===
 async function fetchUserSubscription(userId) {
   if (!sb || !userId) return;
   const { data } = await sb
@@ -470,11 +447,13 @@ function updateProUI() {
     if (badge) badge.className = "bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm flex items-center gap-1";
     if (planStatus) planStatus.innerText = `PRO ACTIVE • ${daysLeft} Days Left 👑`;
     document.querySelectorAll('.pro-lock-badge').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.watermark-strip').forEach(el => el.classList.add('hidden'));
   } else {
     if (badgeText) badgeText.innerText = "Get Pro";
     if (badge) badge.className = "bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm hover:scale-105 transition flex items-center gap-1";
     if (planStatus) planStatus.innerText = "Free Plan (Upgrade to Pro)";
     document.querySelectorAll('.pro-lock-badge').forEach(el => el.classList.remove('hidden'));
+    document.querySelectorAll('.watermark-strip').forEach(el => el.classList.remove('hidden'));
     hideWatermark = false;
     document.getElementById('editorWatermark')?.classList.remove('hidden');
   }
@@ -595,7 +574,6 @@ function toggleWatermark() {
   if (wm) wm.classList.toggle('hidden', hideWatermark);
 }
 
-// === PWA SETUP ===
 function setupPWA() {
   const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     ? import.meta.env.BASE_URL
@@ -764,7 +742,6 @@ function startApp() {
   if (navPic) navPic.src = user.pic;
 }
 
-// === FEED & CATEGORIES ===
 function initPostersData() {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
@@ -875,28 +852,23 @@ function getPosterHTML(url, category, index) {
   }
 
   const isFav = favoriteUrls.includes(url);
-  // Default Style: preset 0
   const defaultPreset = SWIPE_STYLE_PRESETS[index % SWIPE_STYLE_PRESETS.length];
 
   return `
     <div class="poster-card-wrapper relative">
       <div id="print-area-${index}" data-style-index="${index % SWIPE_STYLE_PRESETS.length}" class="poster-capture-area relative w-full" onclick="openEditor('${url}')">
         
-        <!-- Image Container -->
+        <!-- Image Container (Side watermark hata diya gaya hai) -->
         <div class="relative w-full h-full">
           <img src="${url}" loading="lazy" class="main-img w-full block" alt="${category}" crossorigin="anonymous">
           <img src="${user.logo || SITE_LOGO_URL}" class="absolute top-2 right-2 w-10 h-10 object-contain drop-shadow-xl z-30" crossorigin="anonymous">
-          <div class="absolute bottom-2 left-2 z-30 pointer-events-none bg-black/40 px-3 py-1 rounded-full">
-            <span class="text-[7px] text-white font-quicksand font-bold tracking-[0.2em] uppercase">postbnao.com</span>
-          </div>
 
-          <!-- Subtle Swipe Hint on Top -->
-          <div class="absolute bottom-1 right-2 z-20 pointer-events-none opacity-40 text-[8px] text-white font-bold flex items-center gap-1">
+          <div class="capture-hide absolute bottom-1 right-2 z-20 pointer-events-none opacity-40 text-[8px] text-white font-bold flex items-center gap-1">
             <span>👈 Slide Style 👉</span>
           </div>
         </div>
 
-        <!-- Dynamic Swipeable Overlay Container -->
+        <!-- Profile Overlay -->
         <div class="poster-overlay-container ${defaultPreset.theme}" style="background: linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${defaultPreset.bg}');">
           <div class="profile-group">
             <div class="profile-pic-container shrink-0">
@@ -912,6 +884,11 @@ function getPosterHTML(url, category, index) {
           </div>
           <div class="social-group">${socialsHTML}</div>
         </div>
+
+        <!-- NEW: Watermark Profile ke Niche (Chhota Clean Text) -->
+        <div class="watermark-strip w-full bg-neutral-950 text-white/80 text-center py-1 px-2 border-t border-white/10 ${isProUser() ? 'hidden' : ''}">
+          <span class="text-[9px] font-quicksand font-semibold tracking-wider">Made with postbnao.com</span>
+        </div>
       </div>
 
       <div class="action-bar poster-actions-area bg-white p-3 border-t border-gray-100 flex justify-between items-center mt-auto">
@@ -925,7 +902,6 @@ function getPosterHTML(url, category, index) {
           <button onclick="shareFeedItem('print-area-${index}', this)" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="fab fa-whatsapp"></i>
           </button>
-          <!-- Feed Download (LOCKED 👑) -->
           <button onclick="requirePro(() => downloadFeedItem('print-area-${index}', this))" class="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
             <i class="fas fa-download"></i>
             <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
@@ -944,6 +920,7 @@ async function downloadFeedItem(containerId, btn) {
   try {
     const canvas = await window.html2canvas(captureTarget, {
       scale: 3, useCORS: true, allowTaint: false, backgroundColor: null,
+      ignoreElements: (el) => el.classList?.contains('capture-hide'),
       onclone: (clonedDoc) => {
         const el = clonedDoc.getElementById(containerId);
         if (el) { el.style.borderRadius = '0'; el.style.border = 'none'; el.style.boxShadow = 'none'; }
@@ -961,7 +938,6 @@ async function downloadFeedItem(containerId, btn) {
   }
 }
 
-// === FAST WHATSAPP SHARING LOGIC ===
 function openShareReadyModal(file) {
   pendingShareFile = file;
   document.getElementById('shareReadyModal')?.classList.remove('hidden');
@@ -1127,7 +1103,6 @@ function adjustNameSize() {
 }
 
 function openEditor(src) {
-  // Agar swipe chal raha tha toh editor na kholein!
   if (didHorizontalSwipe) {
     didHorizontalSwipe = false;
     return;
