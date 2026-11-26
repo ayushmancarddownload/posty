@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <!-- Profile Card -->
+      <!-- Profile Card (Watermark ab isi section ke andar niche rahega, bina black patti ke!) -->
       <div id="profileOverlay" class="poster-overlay-container theme-left" style="background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.6));">
         <div class="profile-group">
           <div class="profile-pic-container relative cursor-pointer group" onclick="requirePro(() => document.getElementById('updateProfilePicInput').click())" title="Change Picture">
@@ -135,11 +135,11 @@
           </p>
           <div id="socialsContainer" class="social-inner-block flex flex-col gap-0.5 text-[10px] font-medium opacity-90"></div>
         </div>
-      </div>
 
-      <!-- NEW: Watermark Profile ke Niche (Chhota Clean Text) -->
-      <div id="editorWatermark" class="w-full bg-neutral-950 text-white/80 text-center py-1 px-2 border-t border-white/10">
-        <span class="text-[9px] font-quicksand font-semibold tracking-wider">Made with postbnao.com</span>
+        <!-- Profile ke andar hi niche chhota clean text -->
+        <div id="editorWatermark" class="absolute bottom-1 left-0 right-0 text-center pointer-events-none">
+          <span class="text-[8px] font-quicksand font-semibold tracking-wider opacity-75">Made with postbnao.com</span>
+        </div>
       </div>
     </div>
     <div class="h-40 w-full"></div>

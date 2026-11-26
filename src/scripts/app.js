@@ -858,7 +858,7 @@ function getPosterHTML(url, category, index) {
     <div class="poster-card-wrapper relative">
       <div id="print-area-${index}" data-style-index="${index % SWIPE_STYLE_PRESETS.length}" class="poster-capture-area relative w-full" onclick="openEditor('${url}')">
         
-        <!-- Image Container (Side watermark hata diya gaya hai) -->
+        <!-- Image Container (Clean, koi side watermark nahi) -->
         <div class="relative w-full h-full">
           <img src="${url}" loading="lazy" class="main-img w-full block" alt="${category}" crossorigin="anonymous">
           <img src="${user.logo || SITE_LOGO_URL}" class="absolute top-2 right-2 w-10 h-10 object-contain drop-shadow-xl z-30" crossorigin="anonymous">
@@ -868,7 +868,7 @@ function getPosterHTML(url, category, index) {
           </div>
         </div>
 
-        <!-- Profile Overlay -->
+        <!-- Profile Overlay (Watermark ab isi ke andar niche hai, bina black patti ke!) -->
         <div class="poster-overlay-container ${defaultPreset.theme}" style="background: linear-gradient(to top, rgba(0,0,0,${FEED_OPACITY_BOTTOM}), rgba(0,0,0,${FEED_OPACITY_TOP})), url('${defaultPreset.bg}');">
           <div class="profile-group">
             <div class="profile-pic-container shrink-0">
@@ -883,11 +883,11 @@ function getPosterHTML(url, category, index) {
             </div>
           </div>
           <div class="social-group">${socialsHTML}</div>
-        </div>
 
-        <!-- NEW: Watermark Profile ke Niche (Chhota Clean Text) -->
-        <div class="watermark-strip w-full bg-neutral-950 text-white/80 text-center py-1 px-2 border-t border-white/10 ${isProUser() ? 'hidden' : ''}">
-          <span class="text-[9px] font-quicksand font-semibold tracking-wider">Made with postbnao.com</span>
+          <!-- Profile ke andar hi niche chhota clean text -->
+          <div class="watermark-strip absolute bottom-1 left-0 right-0 text-center pointer-events-none ${isProUser() ? 'hidden' : ''}">
+            <span class="text-[8px] font-quicksand font-semibold tracking-wider opacity-75">Made with postbnao.com</span>
+          </div>
         </div>
       </div>
 
