@@ -7,6 +7,18 @@ const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
 const FREE_LAUNCH_MODE = false;
 
+// === 2. SABSE PEHLE: URL se Referral Param capture karein (Bina kisi delay ke) ===
+function captureReferralParam() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref && ref.length > 10) {
+      localStorage.setItem('posty_ref', ref);
+    }
+  } catch (e) {}
+}
+captureReferralParam();
+
 let sb = null;
 let currentAuthUser = null;
 let userSubscription = { plan: 'free', proUntil: 0 };
@@ -20,8 +32,6 @@ let allPosters = [];
 let activeCategory = 'All';
 let favoriteUrls = JSON.parse(localStorage.getItem('postyFavorites') || '[]');
 let pendingShareFile = null;
-
-// Pending Action (Jab user bina details bhare kisi poster par click kare)
 let pendingUserAction = null;
 
 let user = {
@@ -80,7 +90,6 @@ if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")
         startApp();
       }
 
-      // Agar login ke baad koi pending action tha toh execute karein
       if (pendingUserAction) {
         document.getElementById('userDetailsModal')?.classList.add('hidden');
         const action = pendingUserAction;
@@ -95,11 +104,9 @@ if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes("YOUR_PROJECT_ID")
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  captureReferralParam();
   setupPWA();
   checkInstamojoReturn();
 
-  // Saved user profile load karein (agar pehle se hai)
   const saved = localStorage.getItem('aestheticUser');
   if (saved) {
     try {
@@ -120,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {}
   }
 
-  // OPTION C: Site khulte hi turant feed aur navigation chalu karein (NO POPUP!)
   startApp();
 
   document.getElementById('profilePicInput')?.addEventListener('change', handleFileSelect);
@@ -132,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFeed();
 });
 
-// Check karein ki user ne profile setup kiya hai ya nahi
 function hasProfileSetup() {
   const saved = localStorage.getItem('aestheticUser');
   return Boolean(saved || currentAuthUser);
@@ -143,84 +148,88 @@ function closeUserSetupModal() {
   document.getElementById('userDetailsModal')?.classList.add('hidden');
 }
 
-// === TIERED REFERRAL SYSTEM (2 -> 7d, 5 -> 30d, 10 -> 90d) ===
-function captureReferralParam() {
-  const params = new URLSearchParams(window.location.search);
-  const ref = params.get('ref');
-  if (ref && ref.length > 10) {
-    localStorage.setItem('posty_ref', ref);
-    if (!params.get('payment_id')) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-}
-
+// === CLAIM REFERRAL (Direct Database RPC) ===
 async function claimPendingReferral(myUid) {
   const referrerId = localStorage.getItem('posty_ref');
   if (!referrerId || referrerId === myUid) {
-    localStorage.removeItem('posty_ref');
+    if (referrerId === myUid) localStorage.removeItem('posty_ref');
     return;
   }
 
   try {
-    const res = await fetch(`${FUNCTIONS_URL}/record-referral`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify({ referrer_id: referrerId, referred_user_id: myUid })
+    const { data, error } = await sb.rpc('claim_referral', {
+      referrer_uuid: referrerId
     });
-    await res.json();
+
+    if (error) {
+      console.warn('Referral RPC error:', error.message);
+      if (error.message.includes('Already referred') || error.message.includes('not found') || error.message.includes('Self referral')) {
+        localStorage.removeItem('posty_ref');
+      }
+    } else if (data) {
+      console.log('Referral claim result:', data);
+      if (data.success || data.error === 'Already referred') {
+        localStorage.removeItem('posty_ref');
+      }
+    }
   } catch (e) {
-    console.error('Referral error:', e);
-  } finally {
-    localStorage.removeItem('posty_ref');
+    console.error('Referral network error:', e);
   }
 }
 
 async function fetchReferralCount(myUid) {
   if (!sb || !myUid) return;
-  const { count } = await sb
-    .from('referrals')
-    .select('*', { count: 'exact', head: true })
-    .eq('referrer_id', myUid);
+  try {
+    const { count, error } = await sb
+      .from('referrals')
+      .select('*', { count: 'exact', head: true })
+      .eq('referrer_id', myUid);
 
-  const total = count || 0;
-  const textEl = document.getElementById('refCountText');
-  const barEl = document.getElementById('refProgressBar');
-  const statusMsg = document.getElementById('refStatusMsg');
+    if (error) {
+      console.warn('Fetch referrals error:', error.message);
+      return;
+    }
 
-  if (textEl) textEl.innerText = `${Math.min(total, 10)} / 10`;
-  if (barEl) barEl.style.width = `${Math.min(100, (total / 10) * 100)}%`;
+    const total = count || 0;
+    const textEl = document.getElementById('refCountText');
+    const barEl = document.getElementById('refProgressBar');
+    const statusMsg = document.getElementById('refStatusMsg');
 
-  const m1 = document.getElementById('milestone-box-1');
-  const mb1 = document.getElementById('milestone-badge-1');
-  if (total >= 2) {
-    m1?.classList.add('bg-emerald-100', 'border-emerald-500');
-    if (mb1) { mb1.innerText = '✅ UNLOCKED'; mb1.className = 'text-[8px] font-bold text-emerald-700 block mt-0.5'; }
-  }
+    if (textEl) textEl.innerText = `${Math.min(total, 10)} / 10`;
+    if (barEl) barEl.style.width = `${Math.min(100, (total / 10) * 100)}%`;
 
-  const m2 = document.getElementById('milestone-box-2');
-  const mb2 = document.getElementById('milestone-badge-2');
-  if (total >= 5) {
-    m2?.classList.add('bg-teal-100', 'border-teal-500');
-    if (mb2) { mb2.innerText = '✅ UNLOCKED'; mb2.className = 'text-[8px] font-bold text-teal-700 block mt-0.5'; }
-  }
+    // Milestone 1 (2 Friends = 7 Days)
+    const m1 = document.getElementById('milestone-box-1');
+    const mb1 = document.getElementById('milestone-badge-1');
+    if (total >= 2) {
+      m1?.classList.add('bg-emerald-100', 'border-emerald-500');
+      if (mb1) { mb1.innerText = '✅ UNLOCKED'; mb1.className = 'text-[8px] font-bold text-emerald-700 block mt-0.5'; }
+    }
 
-  const m3 = document.getElementById('milestone-box-3');
-  const mb3 = document.getElementById('milestone-badge-3');
-  if (total >= 10) {
-    m3?.classList.add('bg-amber-100', 'border-amber-500');
-    if (mb3) { mb3.innerText = '✅ UNLOCKED'; mb3.className = 'text-[8px] font-bold text-amber-700 block mt-0.5'; }
-  }
+    // Milestone 2 (5 Friends = 30 Days)
+    const m2 = document.getElementById('milestone-box-2');
+    const mb2 = document.getElementById('milestone-badge-2');
+    if (total >= 5) {
+      m2?.classList.add('bg-teal-100', 'border-teal-500');
+      if (mb2) { mb2.innerText = '✅ UNLOCKED'; mb2.className = 'text-[8px] font-bold text-teal-700 block mt-0.5'; }
+    }
 
-  if (statusMsg) {
-    if (total < 2) statusMsg.innerText = `Sirf ${2 - total} dost aur invite karein -> 7 Din Pro Free!`;
-    else if (total < 5) statusMsg.innerText = `Sirf ${5 - total} dost aur invite karein -> 30 Din Pro Free!`;
-    else if (total < 10) statusMsg.innerText = `Sirf ${10 - total} dost aur invite karein -> 90 Din Pro Free!`;
-    else statusMsg.innerText = `🎉 Mubarak ho! Saare 3 Free Pro Milestones Unlock Ho Gaye!`;
+    // Milestone 3 (10 Friends = 90 Days)
+    const m3 = document.getElementById('milestone-box-3');
+    const mb3 = document.getElementById('milestone-badge-3');
+    if (total >= 10) {
+      m3?.classList.add('bg-amber-100', 'border-amber-500');
+      if (mb3) { mb3.innerText = '✅ UNLOCKED'; mb3.className = 'text-[8px] font-bold text-amber-700 block mt-0.5'; }
+    }
+
+    if (statusMsg) {
+      if (total < 2) statusMsg.innerText = `Sirf ${2 - total} dost aur invite karein -> 7 Din Pro Free!`;
+      else if (total < 5) statusMsg.innerText = `Sirf ${5 - total} dost aur invite karein -> 30 Din Pro Free!`;
+      else if (total < 10) statusMsg.innerText = `Sirf ${10 - total} dost aur invite karein -> 90 Din Pro Free!`;
+      else statusMsg.innerText = `🎉 Mubarak ho! Saare 3 Free Pro Milestones Unlock Ho Gaye!`;
+    }
+  } catch (err) {
+    console.error('Fetch referral count error:', err);
   }
 }
 
@@ -573,7 +582,6 @@ function performCrop() {
   cropper = null;
 }
 
-// User details save karne par (Popup se)
 function saveUserSetup() {
   const nameInput = document.getElementById('userNameInput');
   if (!nameInput || !nameInput.value.trim()) {
@@ -603,7 +611,6 @@ function saveUserSetup() {
   startApp();
   loadFeed();
 
-  // Agar user ne kisi poster par click kiya tha, toh wo poster ab open karein!
   if (pendingUserAction) {
     const action = pendingUserAction;
     pendingUserAction = null;
@@ -723,9 +730,15 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
     const anyVisible = user.socials.insta.visible || user.socials.twitter.visible || user.socials.fb.visible;
     if (anyVisible) {
       socialsHTML += `<p class="text-[8px] font-bold opacity-80 uppercase tracking-widest mb-0.5 flex items-center gap-1">Follow Me</p><div class="social-inner-block flex flex-col gap-0.5 text-[9px] font-medium opacity-90">`;
-      if (user.socials.insta.visible) socialsHTML += `<div class="info-row"><i class="fab fa-instagram fw-icon ${!user.socials.insta.val ? 'opacity-60' : ''}"></i> ${user.socials.insta.val ? `<span>${user.socials.insta.val}</span>` : ''}</div>`;
-      if (user.socials.twitter.visible) socialsHTML += `<div class="info-row"><i class="fab fa-twitter fw-icon ${!user.socials.twitter.val ? 'opacity-60' : ''}"></i> ${user.socials.twitter.val ? `<span>${user.socials.twitter.val}</span>` : ''}</div>`;
-      if (user.socials.fb.visible) socialsHTML += `<div class="info-row"><i class="fab fa-facebook-f fw-icon ${!user.socials.fb.val ? 'opacity-60' : ''}"></i> ${user.socials.fb.val ? `<span>${user.socials.fb.val}</span>` : ''}</div>`;
+      if (user.socials.insta.visible) {
+        socialsHTML += `<div class="info-row"><i class="fab fa-instagram fw-icon ${!user.socials.insta.val ? 'opacity-60' : ''}"></i> ${user.socials.insta.val ? `<span>${user.socials.insta.val}</span>` : ''}</div>`;
+      }
+      if (user.socials.twitter.visible) {
+        socialsHTML += `<div class="info-row"><i class="fab fa-twitter fw-icon ${!user.socials.twitter.val ? 'opacity-60' : ''}"></i> ${user.socials.twitter.val ? `<span>${user.socials.twitter.val}</span>` : ''}</div>`;
+      }
+      if (user.socials.fb.visible) {
+        socialsHTML += `<div class="info-row"><i class="fab fa-facebook-f fw-icon ${!user.socials.fb.val ? 'opacity-60' : ''}"></i> ${user.socials.fb.val ? `<span>${user.socials.fb.val}</span>` : ''}</div>`;
+      }
       socialsHTML += `</div>`;
     }
   }
@@ -770,7 +783,6 @@ function getPosterHTML(url, category, theme, bg, fontClass, index) {
           <button onclick="shareFeedItem('print-area-${index}', this)" class="bg-[#25D366] text-white p-2 rounded-full hover:scale-105 transition shadow-sm w-9 h-9 flex items-center justify-center">
             <i class="fab fa-whatsapp"></i>
           </button>
-          <!-- Feed Download (LOCKED 👑) -->
           <button onclick="requirePro(() => downloadFeedItem('print-area-${index}', this))" class="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-2 rounded-full hover:scale-105 transition shadow-md w-9 h-9 flex items-center justify-center">
             <i class="fas fa-download"></i>
             <span class="pro-lock-badge absolute -top-1 -right-1 text-[8px]">👑</span>
@@ -862,7 +874,6 @@ async function handleShareCanvas(canvas) {
   }
 }
 
-// Option C Check on Share: Agar user ne details nahi bhari toh pehle popup khulega!
 async function shareFeedItem(containerId, btn) {
   if (!hasProfileSetup()) {
     pendingUserAction = () => shareFeedItem(containerId, btn);
@@ -971,7 +982,6 @@ function adjustNameSize() {
   }
 }
 
-// Option C Check on Tap To Edit: Agar user ne details nahi bhari toh pehle popup khulega!
 function openEditor(src) {
   if (!hasProfileSetup()) {
     pendingUserAction = () => openEditor(src);
